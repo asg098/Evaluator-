@@ -1,0 +1,1331 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Evaluator - University Student Evaluation System for HODs, Coordinators, Teachers and Students.">
+    <title>Evaluator - University Student Evaluation System</title>
+
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//cdn.sheetjs.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//www.gstatic.com">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div class="container">
+
+
+        <div id="authContainer" class="auth-container">
+            <div class="auth-header">
+                <h1>Evaluator</h1>
+                <p>University Student Evaluation System</p>
+            </div>
+            <div class="auth-body">
+
+
+                <div id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" onkeydown="if(event.key==='Enter')login()"
+                            placeholder="Enter your password">
+                    </div>
+                    <button class="btn btn-primary" id="loginBtn">Login</button>
+                    <div class="toggle-link">
+                        <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                    </div>
+                    <div class="toggle-link">
+                        No account? <a href="#" id="showSignupLink">Sign Up</a>
+                    </div>
+                </div>
+
+
+                <div id="forgotPasswordForm" class="hidden">
+                    <div class="alert alert-info">Enter your email address and we will send you a password reset link.
+                    </div>
+                    <div class="form-group">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" placeholder="Enter your registered email">
+                    </div>
+                    <button class="btn btn-primary" id="resetPasswordBtn">Send Reset Link</button>
+                    <div class="toggle-link">
+                        Remember your password? <a href="#" id="backToLoginLink">Back to Login</a>
+                    </div>
+                </div>
+
+
+                <div id="signupForm" class="hidden">
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <input type="email" id="signupEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" placeholder="Minimum 6 characters">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupRole">Role</label>
+                        <select id="signupRole" onchange="toggleSignupFields()">
+                            <option value="student">Student (Self Registration)</option>
+                            <option value="teacher">Teacher (Requires Approval)</option>
+                            <option value="coordinator">Coordinator (Requires Approval)</option>
+                            <option value="hod">HOD (Auto Approved)</option>
+                            <option value="principal">Principal (Auto Approved)</option>
+                            <option value="dean">Dean (Auto Approved)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="enrollmentGroup">
+                        <label for="signupEnrollment">Enrollment Number</label>
+                        <input type="text" id="signupEnrollment" placeholder="Enter enrollment number">
+                    </div>
+                    <div class="form-group hidden" id="departmentGroup">
+                        <label for="signupDepartment">Department</label>
+                        <input type="text" id="signupDepartment" placeholder="Enter department name">
+                    </div>
+                    <div class="alert alert-warning hidden" id="approvalNotice">
+                        <strong>Note:</strong> Teacher and Coordinator accounts require HOD approval before access is
+                        granted.
+                    </div>
+                    <button class="btn btn-primary" id="signupBtn">Create Account</button>
+                    <div class="toggle-link">
+                        Already have an account? <a href="#" id="showLoginLink">Login</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="accessDeniedScreen" class="auth-container" style="display:none;">
+            <div class="auth-header" style="background:#dc2626;">
+                <h1>Access Denied</h1>
+                <p>Account Pending Approval</p>
+            </div>
+            <div class="auth-body">
+                <div class="alert alert-danger">
+                    <strong>Your account requires approval.</strong><br><br>
+                    Your registration has been received but is pending approval from the HOD.<br><br>
+                    Email: <span id="deniedEmail"></span><br>
+                    Role: <span id="deniedRole"></span><br>
+                    Status: <span class="badge badge-warning">PENDING APPROVAL</span><br><br>
+                    Please contact your Head of Department to approve your account.
+                </div>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+
+        <div id="hodDashboard" class="dashboard">
+            <div class="dashboard-header">
+                <h2>HOD Dashboard</h2>
+                <div class="user-info">
+                    <span class="role-badge" style="background:rgba(124,58,237,.5);" id="hodRoleBadge">Head of
+                        Department</span>
+                    <button class="btn btn-secondary" style="width:auto;margin:0;padding:8px 16px;"
+                        onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="dashboard-nav">
+                <button class="nav-btn active" onclick="showHODSection('overview',this)">Overview</button>
+                <button class="nav-btn" onclick="showHODSection('departments',this)">Departments</button>
+                <button class="nav-btn" onclick="showHODSection('approvals',this)">Pending Approvals</button>
+                <button class="nav-btn" onclick="showHODSection('coordinators',this)">Coordinators</button>
+                <button class="nav-btn" onclick="showHODSection('users',this)">Manage Users</button>
+                <button class="nav-btn" onclick="showHODSection('results',this)">View Results</button>
+                <button class="nav-btn" onclick="showHODSection('analytics',this)">Analytics</button>
+            </div>
+            <div class="dashboard-content">
+
+
+                <div id="hodOverview" class="section active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Departments</h3>
+                            <div class="value" id="hodTotalDepts">0</div>
+                        </div>
+                        <div class="stat-card success">
+                            <h3>Coordinators</h3>
+                            <div class="value" id="totalCoordinators">0</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <h3>Teachers</h3>
+                            <div class="value" id="totalTeachers">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Students</h3>
+                            <div class="value" id="totalStudents">0</div>
+                        </div>
+                        <div class="stat-card danger">
+                            <h3>Exams</h3>
+                            <div class="value" id="totalExams">0</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <h3>Pending Approvals</h3>
+                            <div class="value" id="hodPendingApprovals">0</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="hodDepartments" class="section">
+                    <div class="card">
+                        <h3>Create Department</h3>
+                        <div class="alert alert-info"><strong>Department Management:</strong> Create departments here.
+                            HODs must register first before assignment.</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Department Name</label><input type="text" id="deptName"
+                                    placeholder="e.g., Computer Engineering"></div>
+                            <div class="form-group"><label>Department Code</label><input type="text" id="deptCode"
+                                    placeholder="e.g., CE"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createDepartment()">Create Department</button>
+                    </div>
+                    <div class="card">
+                        <h3>All Departments</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportDepartmentsExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Code</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="departmentsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="hodApprovals" class="section">
+                    <div class="card">
+                        <h3>Pending Approvals</h3>
+                        <div class="alert alert-warning"><strong>Approval Required:</strong> Coordinators and Teachers
+                            require HOD approval before system access.</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Registered</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingApprovalsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="hodCoordinators" class="section">
+                    <div class="card">
+                        <h3>Assign Coordinator</h3>
+                        <div class="alert alert-info"><strong>Workflow:</strong> Assign Coordinators to departments.
+                            Coordinators manage subjects, students, exams, and teachers.</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Department</label><input type="text" id="coordDept"
+                                    placeholder="e.g., Computer Science"></div>
+                            <div class="form-group">
+                                <label>Select Coordinator</label>
+                                <select id="coordEmail" onchange="fillCoordinatorEmail()">
+                                    <option value="">Select Coordinator</option>
+                                </select>
+                                <small style="color:var(--gray-500);display:block;margin-top:4px;">Or enter email
+                                    manually:</small>
+                                <input type="email" id="coordEmailManual" placeholder="coordinator@university.edu"
+                                    style="margin-top:4px;">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="assignCoordinator()">Assign Coordinator</button>
+                    </div>
+                    <div class="card">
+                        <h3>Current Coordinators</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportCoordinatorsExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Coordinator</th>
+                                    <th>Email</th>
+                                    <th>Assigned</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coordinatorsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="hodAnalytics" class="section">
+                    <div class="card">
+                        <h3>Audit Trail</h3>
+                        <div class="form-group">
+                            <label>Filter by Action</label>
+                            <select id="auditFilter" onchange="loadAuditLogs()">
+                                <option value="">All Actions</option>
+                                <option value="ADD_STUDENT">Add Student</option>
+                                <option value="BULK_IMPORT_STUDENTS">Bulk Import</option>
+                                <option value="EVALUATE_STUDENT">Evaluate Student</option>
+                                <option value="FINALIZE_EXAM_RESULTS">Finalize Results</option>
+                                <option value="APPROVE_USER">Approve User</option>
+                                <option value="CREATE_DEPARTMENT">Create Department</option>
+                            </select>
+                        </div>
+                        <div class="btn-group" style="margin-bottom:14px;">
+                            <button class="btn btn-primary" onclick="loadAuditLogs()">Load Audit Logs</button>
+                            <button class="btn btn-success btn-sm" onclick="exportAuditLogsExcel()">Export to
+                                Excel</button>
+                        </div>
+                        <div id="auditLogsList"></div>
+                    </div>
+                </div>
+
+
+                <div id="hodUsers" class="section">
+                    <div class="card">
+                        <h3>Create User Account</h3>
+                        <div class="alert alert-info"><strong>Admin Account Creation:</strong> Create accounts for staff
+                            directly. Users can login immediately with the credentials provided.</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Full Name</label><input type="text" id="adminCreateName"
+                                    placeholder="Full Name"></div>
+                            <div class="form-group"><label>Email</label><input type="email" id="adminCreateEmail"
+                                    placeholder="user@university.edu"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Password</label><input type="password"
+                                    id="adminCreatePassword" placeholder="Minimum 6 characters"></div>
+                            <div class="form-group">
+                                <label>Role</label>
+                                <select id="adminCreateRole" onchange="toggleAdminCreateFields()">
+                                    <option value="coordinator">Coordinator</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="student">Student</option>
+                                    <option value="hod">HOD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="adminEnrollmentGroup" class="form-group hidden">
+                            <label>Enrollment Number</label>
+                            <input type="text" id="adminCreateEnrollment" placeholder="e.g., 2025001">
+                        </div>
+                        <div id="adminDepartmentGroup" class="form-group">
+                            <label>Department</label>
+                            <input type="text" id="adminCreateDepartment" placeholder="e.g., Computer Engineering">
+                        </div>
+                        <button class="btn btn-primary" onclick="adminCreateUser()">Create Account</button>
+                    </div>
+                    <div class="card">
+                        <h3>Teacher Account Control</h3>
+                        <p style="color:var(--gray-500);font-size:13px;margin-bottom:12px;">Enable or disable teacher
+                            logins. Disabled teachers cannot access the system or submit evaluations. Use <strong>exam
+                                period mode</strong> to restrict all teachers at once.</p>
+                        <div class="bulk-bar">
+                            <button class="btn btn-sm btn-on" onclick="setAllTeacherAccounts(true, this)">All Teachers
+                                ON</button>
+                            <button class="btn btn-sm btn-off" onclick="setAllTeacherAccounts(false, this)">All Teachers
+                                OFF</button>
+                            <span style="color:var(--gray-400);font-size:12px;">|</span>
+                            <button class="btn btn-sm" style="background:#f59e0b;color:#fff;"
+                                onclick="setExamPeriodMode(true, this)">Exam Period: Restrict All</button>
+                            <button class="btn btn-sm" style="background:#6366f1;color:#fff;"
+                                onclick="setExamPeriodMode(false, this)">Exam Period: Release All</button>
+                            <input type="text" id="hodTeacherSearchInput" placeholder="Search teacher..."
+                                oninput="filterTeacherAccountList('hod')"
+                                style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px;flex:1;min-width:140px;">
+                        </div>
+                        <div id="hodTeacherAccountList">
+                            <p style="color:var(--gray-400);padding:16px 0;text-align:center;">Loading teachers...</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>All Users</h3>
+                        <div class="form-group">
+                            <label>Filter by Role</label>
+                            <select id="userFilterRole" onchange="loadAllUsers()">
+                                <option value="">All Roles</option>
+                                <option value="hod">HOD</option>
+                                <option value="coordinator">Coordinator</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="student">Student</option>
+                            </select>
+                        </div>
+                        <div class="bulk-bar">
+                            <button class="btn btn-sm btn-on" onclick="setAllTeacherAccounts(true, this)">All Teachers
+                                ON</button>
+                            <button class="btn btn-sm btn-off" onclick="setAllTeacherAccounts(false, this)">All Teachers
+                                OFF</button>
+                            <button class="btn btn-success btn-sm" onclick="exportUsersExcel()">Export to Excel</button>
+                        </div>
+                        <div id="hodTeacherAccountList" style="margin-bottom:16px;display:none;"></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Dept / Info</th>
+                                    <th>Account</th>
+                                    <th>Approval</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allUsersList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="hodResults" class="section">
+                    <div class="card">
+                        <h3>View Finalized Results</h3>
+                        <div class="alert alert-info"><strong>Results Access:</strong> View and export all finalized
+                            examination results from your department.</div>
+
+                        <div class="filters-container"
+                            style="background:var(--gray-50);padding:16px;border-radius:8px;margin-bottom:20px;">
+                            <div class="filter-group" style="display:inline-block;min-width:180px;margin-right:12px;">
+                                <label>Filter by Subject:</label>
+                                <select id="hodResultsSubjectFilter" class="form-control"
+                                    onchange="loadResultsForHOD()">
+                                    <option value="">All Subjects</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display:inline-block;min-width:180px;margin-right:12px;">
+                                <label>Filter by Class:</label>
+                                <select id="hodResultsClassFilter" class="form-control" onchange="loadResultsForHOD()">
+                                    <option value="">All Classes</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display:inline-block;min-width:160px;margin-right:12px;">
+                                <label>Filter by Type:</label>
+                                <select id="hodResultsTypeFilter" class="form-control" onchange="loadResultsForHOD()">
+                                    <option value="">All Types</option>
+                                    <option value="standard">Standard</option>
+                                    <option value="ca">CA</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="loadResultsForHOD()" style="margin-top:24px;">
+                                <span>🔄</span> Refresh Results
+                            </button>
+                        </div>
+
+                        <div id="resultsLoader" style="display:none;text-align:center;padding:40px;">
+                            <div
+                                style="display:inline-block;width:40px;height:40px;border:4px solid var(--gray-200);border-top:4px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;">
+                            </div>
+                            <p style="margin-top:16px;color:var(--gray-500);">Loading results...</p>
+                        </div>
+
+                        <div id="hodResultsContainer"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="coordinatorDashboard" class="dashboard">
+            <div class="dashboard-header">
+                <h2>Coordinator Dashboard</h2>
+                <div class="user-info">
+                    <span class="role-badge">Coordinator</span>
+                    <button class="btn btn-secondary" style="width:auto;margin:0;padding:8px 16px;"
+                        onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="dashboard-nav">
+                <button class="nav-btn active" onclick="showCoordSection('overview',this)">Overview</button>
+                <button class="nav-btn" onclick="showCoordSection('classes',this)">Classes</button>
+                <button class="nav-btn" onclick="showCoordSection('subjects',this)">Subjects</button>
+                <button class="nav-btn" onclick="showCoordSection('students',this)">Students</button>
+                <button class="nav-btn" onclick="showCoordSection('exams',this)">Exams</button>
+                <button class="nav-btn" onclick="showCoordSection('teachers',this)">Teachers</button>
+                <button class="nav-btn" onclick="showCoordSection('results',this)">Results</button>
+                <button class="nav-btn" onclick="showCoordSection('questionbank',this)">Question Bank</button>
+            </div>
+            <div class="dashboard-content">
+
+
+                <div id="coordOverview" class="section active">
+                    <div class="form-row" style="margin-bottom:24px;">
+                        <div class="form-group">
+                            <label>Academic Year</label>
+                            <select id="academicYear" onchange="loadCoordinatorData()">
+                                <option value="2024-25">2024-25</option>
+                                <option value="2025-26" selected>2025-26</option>
+                                <option value="2026-27">2026-27</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Semester</label>
+                            <select id="semester" onchange="loadCoordinatorData()">
+                                <option value="SEM-1">SEM-1</option>
+                                <option value="SEM-2">SEM-2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Subjects</h3>
+                            <div class="value" id="coordTotalSubjects">0</div>
+                        </div>
+                        <div class="stat-card success">
+                            <h3>Students</h3>
+                            <div class="value" id="coordTotalStudents">0</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <h3>Exams</h3>
+                            <div class="value" id="coordTotalExams">0</div>
+                        </div>
+                        <div class="stat-card danger">
+                            <h3>Pending Evaluations</h3>
+                            <div class="value" id="coordPendingEvals">0</div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top:20px;">
+                        <h3>Evaluation Progress</h3>
+                        <div id="evaluationProgress"></div>
+                    </div>
+                </div>
+
+
+                <div id="coordClasses" class="section">
+                    <div class="card">
+                        <h3>Add Class</h3>
+                        <div class="alert alert-info"><strong>Class System:</strong> Define classes (FE, SE, TE, BE) and
+                            divisions (A, B, C). These are used when creating subjects, adding students, and assigning
+                            teachers.</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Class Name</label><input type="text" id="className"
+                                    placeholder="e.g., Second Year Engineering"></div>
+                            <div class="form-group"><label>Class Code</label><input type="text" id="classCode"
+                                    placeholder="e.g., SE"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addClass()">Add Class</button>
+                    </div>
+                    <div class="card">
+                        <h3>Add Division</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Select Class</label><select id="divisionClass"></select>
+                            </div>
+                            <div class="form-group"><label>Division Name</label><input type="text" id="divisionName"
+                                    placeholder="e.g., A, B, C"></div>
+                        </div>
+                        <div class="form-group"><label>Class Teacher Email (Optional)</label><input type="email"
+                                id="classTeacherEmail" placeholder="teacher@university.edu"></div>
+                        <button class="btn btn-success" onclick="addDivision()">Add Division</button>
+                    </div>
+                    <div class="card">
+                        <h3>All Classes and Divisions</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportClassesExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <div id="classesList"></div>
+                    </div>
+                </div>
+
+
+                <div id="coordSubjects" class="section">
+                    <div class="card">
+                        <h3>Add Subject</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Subject Name</label><input type="text" id="subjectName"
+                                    placeholder="e.g., Data Structures"></div>
+                            <div class="form-group"><label>Subject Code</label><input type="text" id="subjectCode"
+                                    placeholder="e.g., CS301"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Class</label><input type="text" id="subjectClass"
+                                    placeholder="e.g., SE"></div>
+                            <div class="form-group"><label>Division</label><input type="text" id="subjectDivision"
+                                    placeholder="e.g., A"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addSubject()">Add Subject</button>
+                    </div>
+                    <div class="card">
+                        <h3>All Subjects</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportSubjectsExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Code</th>
+                                    <th>Class</th>
+                                    <th>Division</th>
+                                    <th>Year</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="coordStudents" class="section">
+                    <div class="card">
+                        <h3>Add Student</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Full Name</label><input type="text" id="studentName"
+                                    placeholder="Student full name"></div>
+                            <div class="form-group"><label>Enrollment Number</label><input type="text"
+                                    id="studentEnrollment" placeholder="e.g., 2025001"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Class</label><input type="text" id="studentClass"
+                                    placeholder="e.g., SE"></div>
+                            <div class="form-group"><label>Division</label><input type="text" id="studentDivision"
+                                    placeholder="e.g., A"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Email (Optional)</label><input type="email" id="studentEmail"
+                                    placeholder="student@university.edu"></div>
+                            <div class="form-group"><label>Phone (Optional)</label><input type="tel" id="studentPhone"
+                                    placeholder="e.g., 9876543210"></div>
+                        </div>
+                        <div class="form-group"><label>Roll No. (Optional)</label><input type="text" id="studentRollNo"
+                                placeholder="e.g., 01"></div>
+                        <button class="btn btn-primary" onclick="addStudent()">Add Student</button>
+                    </div>
+                    <div class="card">
+                        <h3>Bulk Import Students (Excel)</h3>
+                        <div class="alert alert-info"><strong>Excel Format:</strong> Columns: Name, EnrollmentNo, Class,
+                            Division<br>Example: John Doe, 2025001, SE, A</div>
+                        <input type="file" id="csvFile" accept=".xlsx,.xls" onchange="handleExcelUpload(event)"
+                            style="margin-bottom:12px;">
+                        <div id="csvPreview"></div>
+                        <button class="btn btn-success" onclick="importStudentsExcel()" id="importBtn"
+                            style="display:none;">Import Students</button>
+                    </div>
+                    <div class="card">
+                        <h3>All Students</h3>
+                        <div class="form-group"><input type="text" id="studentSearch" placeholder="Search students..."
+                                onkeyup="filterStudents()"></div>
+                        <button class="btn btn-success btn-sm" onclick="exportStudentsExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Enrollment</th>
+                                    <th>Class</th>
+                                    <th>Division</th>
+                                    <th>Roll No.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsList"></tbody>
+                        </table>
+                        <div id="studentsCount" style="margin-top:10px;font-weight:600;"></div>
+                    </div>
+                </div>
+
+
+                <div id="coordExams" class="section">
+                    <div class="card">
+                        <h3>Create Exam</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="openExamModal('standard')">Create Standard
+                                Exam</button>
+                            <button class="btn btn-success" onclick="openExamModal('ca')">Create CA Exam</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>All Exams</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportExamsExcel()"
+                            style="margin-bottom:12px;">Export to Excel</button>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Subject</th>
+                                    <th>Total Marks</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="coordTeachers" class="section">
+                    <div class="card">
+                        <h3>Assign Teacher to Subject</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Select Teacher</label>
+                                <select id="assignTeacherEmail" onchange="fillTeacherEmail()">
+                                    <option value="">Select Teacher</option>
+                                </select>
+                                <small style="color:var(--gray-500);display:block;margin-top:4px;">Or enter email
+                                    manually:</small>
+                                <input type="email" id="assignTeacherEmailManual" placeholder="teacher@university.edu"
+                                    style="margin-top:4px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Select Subject</label>
+                                <select id="assignSubject">
+                                    <option value="">Select Subject</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Class</label><input type="text" id="assignClass"
+                                    placeholder="e.g., SE"></div>
+                            <div class="form-group"><label>Division</label><input type="text" id="assignDivision"
+                                    placeholder="e.g., A"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="assignTeacher()">Assign Teacher</button>
+                    </div>
+                    <div class="card">
+                        <h3>Teacher Account Control</h3>
+                        <p style="color:var(--gray-500);font-size:13px;margin-bottom:12px;">Enable or disable teacher
+                            logins for exam period management.</p>
+                        <div class="bulk-bar">
+                            <button class="btn btn-sm btn-on" onclick="setAllTeacherAccounts(true, this)">All Teachers
+                                ON</button>
+                            <button class="btn btn-sm btn-off" onclick="setAllTeacherAccounts(false, this)">All Teachers
+                                OFF</button>
+                            <span style="color:var(--gray-400);font-size:12px;">|</span>
+                            <button class="btn btn-sm" style="background:#f59e0b;color:#fff;"
+                                onclick="setExamPeriodMode(true, this)">Exam Period: Restrict All</button>
+                            <button class="btn btn-sm" style="background:#6366f1;color:#fff;"
+                                onclick="setExamPeriodMode(false, this)">Exam Period: Release All</button>
+                            <input type="text" id="coordTeacherSearchInput" placeholder="Search teacher..."
+                                oninput="filterTeacherAccountList('coord')"
+                                style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px;flex:1;min-width:140px;">
+                            <button class="btn btn-sm" style="background:var(--gray-100);"
+                                onclick="loadTeacherAccountList()">Refresh</button>
+                        </div>
+                        <div id="coordTeacherAccountList">
+                            <p style="color:var(--gray-400);padding:16px 0;text-align:center;">Loading teachers...</p>
+                        </div>
+                    </div>iv>
+                    <div class="card">
+                        <h3>Teacher Subject Assignments</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th>Email</th>
+                                    <th>Subject</th>
+                                    <th>Class</th>
+                                    <th>Division</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherAssignmentsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="coordResults" class="section">
+                    <div class="card">
+                        <h3>View Finalized Results</h3>
+                        <div class="alert alert-info"><strong>Results Access:</strong> View and export finalized
+                            examination results from your assigned subjects.</div>
+
+                        <div class="filters-container"
+                            style="background:var(--gray-50);padding:16px;border-radius:8px;margin-bottom:20px;">
+                            <div class="filter-group" style="display:inline-block;min-width:180px;margin-right:12px;">
+                                <label>Filter by Subject:</label>
+                                <select id="coordinatorResultsSubjectFilter" class="form-control"
+                                    onchange="loadResultsForCoordinator()">
+                                    <option value="">All Subjects</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display:inline-block;min-width:180px;margin-right:12px;">
+                                <label>Filter by Class:</label>
+                                <select id="coordinatorResultsClassFilter" class="form-control"
+                                    onchange="loadResultsForCoordinator()">
+                                    <option value="">All Classes</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display:inline-block;min-width:160px;margin-right:12px;">
+                                <label>Filter by Type:</label>
+                                <select id="coordinatorResultsTypeFilter" class="form-control"
+                                    onchange="loadResultsForCoordinator()">
+                                    <option value="">All Types</option>
+                                    <option value="standard">Standard</option>
+                                    <option value="ca">CA</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="loadResultsForCoordinator()"
+                                style="margin-top:24px;">
+                                <span>🔄</span> Refresh Results
+                            </button>
+                        </div>
+
+                        <div id="resultsLoader" style="display:none;text-align:center;padding:40px;">
+                            <div
+                                style="display:inline-block;width:40px;height:40px;border:4px solid var(--gray-200);border-top:4px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;">
+                            </div>
+                            <p style="margin-top:16px;color:var(--gray-500);">Loading results...</p>
+                        </div>
+
+                        <div id="coordinatorResultsContainer"></div>
+                    </div>
+
+                    <div class="card" style="margin-top:20px;">
+                        <h3>Results Management (During Evaluation)</h3>
+                        <div class="form-group">
+                            <label>Select Exam</label>
+                            <select id="resultsExam" onchange="loadResults()">
+                                <option value="">Select Exam</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><input type="text" id="resultSearch" placeholder="Search results..."
+                                onkeyup="filterResults()"></div>
+                        <div class="btn-group" style="margin-bottom:14px;">
+                            <button class="btn btn-success btn-sm" onclick="exportResultsExcel()">Export Results to
+                                Excel</button>
+                            <button class="btn btn-danger btn-sm" onclick="finalizeResults()">Finalize Results</button>
+                        </div>
+                        <div id="resultsTable"></div>
+                    </div>
+
+                    <div class="card" style="margin-top:20px;">
+                        <h3>Bulk Import Results from Excel</h3>
+                        <div class="alert alert-info"><strong>Excel Format:</strong> Columns: Enrollment, Mark1, Mark2,
+                            ... (one row per student, header row required)</div>
+                        <div class="form-group">
+                            <label>Select Exam</label>
+                            <select id="coordImportExamSelect">
+                                <option value="">Choose Exam</option>
+                            </select>
+                        </div>
+                        <input type="file" id="coordResultsExcelFile" accept=".xlsx,.xls" style="margin-bottom:12px;">
+                        <button class="btn btn-success btn-sm" onclick="downloadCoordBlankTemplate()">Download Blank
+                            Template</button>
+                        <button class="btn btn-primary" onclick="importCoordinatorResultsFromExcel()">Import
+                            Results</button>
+                    </div>
+                </div>
+
+
+                <div id="coordQuestionbank" class="section">
+                    <div class="card">
+                        <h3>📚 Question Bank Management</h3>
+                        <div class="alert alert-info">
+                            <strong>About Question Bank:</strong> Create and manage questions for CA (Course Attainment)
+                            exams.
+                            Questions are organized by subject, unit, and marks. You can then distribute these randomly
+                            to teachers
+                            ensuring no teacher gets the same question twice and different days get different questions.
+                        </div>
+                    </div>
+
+
+                    <div class="card">
+                        <h3>Add Question</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <select id="qbSubjectSelect">
+                                    <option value="">Select Subject</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Unit Number</label>
+                                <input type="number" id="qbUnit" min="1" max="10" placeholder="e.g., 1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Marks</label>
+                                <select id="qbMarks">
+                                    <option value="2">2 Marks</option>
+                                    <option value="5">5 Marks</option>
+                                    <option value="10">10 Marks</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Difficulty</label>
+                                <select id="qbDifficulty">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Question Text</label>
+                            <textarea id="qbQuestionText" rows="3" placeholder="Enter the question here..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="addQuestion()">Add Question</button>
+                    </div>
+
+
+                    <div class="card">
+                        <h3>Bulk Import Questions from Excel</h3>
+                        <div class="alert alert-warning">
+                            <strong>Excel Format:</strong> Your Excel file should have columns:
+                            <code>subjectId, unit, marks, difficulty, questionText</code>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="downloadQuestionBankTemplate()">Download Excel
+                            Template</button>
+                        <br><br>
+                        <input type="file" id="qbImportFile" accept=".xlsx,.xls" style="margin-bottom:12px;">
+                        <button class="btn btn-primary" onclick="importQuestionsFromExcel()">Import Questions</button>
+                    </div>
+
+
+                    <div class="card">
+                        <h3>All Questions</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Filter by Subject</label>
+                                <select id="qbFilterSubject" onchange="loadQuestions()">
+                                    <option value="">All Subjects</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Filter by Unit</label>
+                                <select id="qbFilterUnit" onchange="loadQuestions()">
+                                    <option value="">All Units</option>
+                                    <option value="1">Unit 1</option>
+                                    <option value="2">Unit 2</option>
+                                    <option value="3">Unit 3</option>
+                                    <option value="4">Unit 4</option>
+                                    <option value="5">Unit 5</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="exportQuestionsToExcel()">Export to
+                            Excel</button>
+                        <div id="questionsList" style="margin-top:16px;"></div>
+                    </div>
+
+
+                    <div class="card">
+                        <h3>🎲 Generate & Distribute Questions to Teachers</h3>
+                        <div class="alert alert-success">
+                            <strong>How it works:</strong> Each teacher gets <strong>Units × Questions per Unit</strong>
+                            unique questions.
+                            Example: 5 units × 3 questions = <strong>15 questions per teacher</strong>.
+                            No teacher ever gets the same question twice. Different dates get different sets.
+                            Questions are unique across teachers on the same date too.
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <select id="distSubject" onchange="loadTeachersForDistribution()">
+                                    <option value="">Select Subject</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Assignment Date</label>
+                                <input type="date" id="distDate" value="">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Number of Units</label>
+                                <input type="number" id="distUnits" min="1" max="10" value="5">
+                            </div>
+                            <div class="form-group">
+                                <label>Questions per Unit <small style="color:#6b7280;font-weight:400;">(each teacher
+                                        gets this many per unit)</small></label>
+                                <input type="number" id="distQuestionsPerUnit" min="1" max="20" value="3">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Marks Type</label>
+                                <select id="distMarks">
+                                    <option value="2">2 Marks</option>
+                                    <option value="5">5 Marks</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Teachers (Auto-loaded)</label>
+                                <div id="distTeachersList"
+                                    style="padding:8px;background:var(--gray-50);border-radius:var(--radius);max-height:120px;overflow-y:auto;">
+                                    <em>Select a subject first</em>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="distributeQuestions()">🚀 Generate & Distribute
+                            Questions</button>
+                    </div>
+
+
+                    <div class="card">
+                        <h3>Distribution History</h3>
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <select id="historySubject" onchange="loadDistributionHistory()">
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+                        <div id="distributionHistory"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="teacherDashboard" class="dashboard">
+            <div class="dashboard-header">
+                <h2>Teacher Dashboard</h2>
+                <div class="user-info">
+                    <span class="role-badge">Teacher</span>
+                    <button class="btn btn-secondary" style="width:auto;margin:0;padding:8px 16px;"
+                        onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="dashboard-nav">
+                <button class="nav-btn active" onclick="showTeacherSection('assignments',this)">My Assignments</button>
+                <button class="nav-btn" onclick="showTeacherSection('students',this)">Students</button>
+                <button class="nav-btn" onclick="showTeacherSection('exams',this)">Exams</button>
+                <button class="nav-btn" onclick="showTeacherSection('evaluate',this)">Evaluate</button>
+                <button class="nav-btn" onclick="showTeacherSection('results',this)">Results</button>
+                <button class="nav-btn" onclick="showTeacherSection('myquestions',this)">My Questions</button>
+            </div>
+            <div class="dashboard-content">
+
+
+                <div id="teacherAssignments" class="section active">
+                    <div class="card">
+                        <h3>My Subject Assignments</h3>
+                        <div class="alert alert-info"><strong>Tip:</strong> Each subject below is assigned to you by the
+                            Coordinator. Click the nav tabs above to manage students, create exams, and evaluate.</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Code</th>
+                                    <th>Class</th>
+                                    <th>Division</th>
+                                    <th>Students</th>
+                                    <th>Year</th>
+                                    <th>Semester</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherAssignmentsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div id="teacherStudents" class="section">
+                    <div class="card">
+                        <h3>Import Students for My Classes</h3>
+                        <div class="alert alert-info"><strong>Tip:</strong> Download the blank template, fill in student
+                            details, then upload the CSV file.</div>
+                        <div class="form-group">
+                            <label>Select Class</label>
+                            <select id="teacherImportClass">
+                                <option value="">Select Class</option>
+                            </select>
+                        </div>
+                        <input type="file" id="teacherStudentExcel" accept=".xlsx,.xls" style="margin-bottom:12px;">
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="teacherImportStudents()">Import Students</button>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top:20px;">
+                        <h3>View Students</h3>
+                        <div class="form-group">
+                            <label>Select Subject</label>
+                            <select id="teacherStudentSubject" onchange="loadTeacherStudents()">
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+                        <div id="teacherStudentsListContainer" style="margin-top:14px;"></div>
+                    </div>
+                </div>
+
+
+                <div id="teacherExams" class="section">
+                    <div class="card">
+                        <h3>Create Exam</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Exam Name</label><input type="text" id="teacherExamName"
+                                    placeholder="e.g., Mid-Term Assessment"></div>
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <select id="teacherExamSubject">
+                                    <option value="">Choose Subject</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Exam Type</label>
+                                <select id="teacherExamType" onchange="toggleTeacherExamType()">
+                                    <option value="standard">Standard</option>
+                                    <option value="ca">CA (Course Attainment)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Number of Criteria</label>
+                                <select id="teacherCriteriaCount" onchange="generateTeacherCriteriaFields()">
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="6">6</option>
+                                    <option value="8">8</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="teacherStandardExamFields">
+                            <div id="teacherCriteriaFields"></div>
+                        </div>
+                        <div id="teacherCAExamFields" style="display:none;">
+                            <div class="alert alert-info">CA (Course Attainment) exams are organized by Course Outcomes.
+                                Each CO has multiple assessment criteria.</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Number of COs</label>
+                                    <select id="teacherCOCount">
+                                        <option value="3">3 COs</option>
+                                        <option value="4">4 COs</option>
+                                        <option value="5" selected>5 COs</option>
+                                        <option value="6">6 COs</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Assessments per CO</label>
+                                    <select id="teacherCACount">
+                                        <option value="1">1 CA</option>
+                                        <option value="2" selected>2 CAs</option>
+                                        <option value="3">3 CAs</option>
+                                        <option value="4">4 CAs</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Max Marks per CA Criterion</label>
+                                <input type="number" id="teacherCAMaxMarks" value="10" min="1" max="100"
+                                    placeholder="e.g., 10">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createTeacherExam()">Create Exam</button>
+                    </div>
+                    <div class="card" style="margin-top:20px;">
+                        <h3>My Exams</h3>
+                        <div class="form-group">
+                            <label>Filter by Subject</label>
+                            <select id="teacherExamsFilter" onchange="loadTeacherExamsList()">
+                                <option value="">All Subjects</option>
+                            </select>
+                        </div>
+                        <div id="teacherExamsList"></div>
+                    </div>
+                </div>
+
+
+                <div id="teacherEvaluate" class="section">
+                    <div class="card">
+                        <h3>Evaluate Students</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Select Subject</label>
+                                <select id="teacherSubjectSelect" onchange="loadTeacherExamsDropdown()">
+                                    <option value="">Choose Subject</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Select Exam</label>
+                                <select id="teacherExamSelect" onchange="loadEvaluationForm()">
+                                    <option value="">Choose Exam</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="evaluationForm"></div>
+                    </div>
+                    <div class="card" style="margin-top:20px;">
+                        <h3>Bulk Import Results from Excel</h3>
+                        <div class="alert alert-info"><strong>Excel Format:</strong> Columns: Enrollment, Criterion1,
+                            Criterion2, ... (one student per row)</div>
+                        <div class="form-group">
+                            <label>Select Exam</label>
+                            <select id="importExamSelect">
+                                <option value="">Choose Exam</option>
+                            </select>
+                        </div>
+                        <input type="file" id="resultsExcelFile" accept=".xlsx,.xls" style="margin-bottom:12px;">
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm" onclick="downloadBlankTemplate()">Download Blank
+                                Template</button>
+                            <button class="btn btn-primary" onclick="importResultsFromExcel()">Import Results</button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="teacherResults" class="section">
+                    <div class="card">
+                        <h3>View Results</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Select Subject</label>
+                                <select id="teacherResultsSubject" onchange="loadTeacherResultsExams()">
+                                    <option value="">Choose Subject</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Select Exam</label>
+                                <select id="teacherResultsExam" onchange="loadAllStudentsResults()">
+                                    <option value="">Choose Exam</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+                            <button class="btn btn-success btn-sm" onclick="exportTeacherResults()"
+                                id="teacherExportBtn" style="width:auto;margin:0;">Export Results to Excel</button>
+                            <input type="text" id="teacherResultSearch" placeholder="Search by name or enrollment..."
+                                oninput="filterTeacherResults()"
+                                style="flex:1;min-width:180px;padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;">
+                        </div>
+                        <div id="teacherResultsContainer"></div>
+                    </div>
+                </div>
+
+
+                <div id="teacherMyquestions" class="section">
+                    <div class="card">
+                        <h3>📋 My Assigned Questions</h3>
+                        <div class="alert alert-info">
+                            <strong>About:</strong> These are questions randomly assigned to you by the Coordinator for
+                            CA exams.
+                            Different dates will show different question sets. You will never receive the same question
+                            twice.
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Select Subject</label>
+                                <select id="teacherQuestionsSubject" onchange="loadTeacherQuestionDates()">
+                                    <option value="">Choose Subject</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Assignment Date</label>
+                                <select id="teacherQuestionsDate" onchange="loadTeacherAssignedQuestions()">
+                                    <option value="">Choose Date</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="exportTeacherQuestionsToExcel()">Export to
+                            Excel</button>
+                        <div id="teacherAssignedQuestionsList" style="margin-top:16px;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="studentDashboard" class="dashboard">
+            <div class="dashboard-header">
+                <h2>Student Dashboard</h2>
+                <div class="user-info">
+                    <span class="role-badge">Student</span>
+                    <button class="btn btn-secondary" style="width:auto;margin:0;padding:8px 16px;"
+                        onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="dashboard-nav">
+                <button class="nav-btn active" onclick="showStudentSection('results',this)">My Results</button>
+                <button class="nav-btn" onclick="showStudentSection('questions',this)">My Assigned Questions</button>
+            </div>
+            <div class="dashboard-content">
+                <div id="studentSectionResults" class="section active">
+                    <div class="card">
+                        <h3>My Results</h3>
+                        <div id="studentResults"></div>
+                    </div>
+                </div>
+                <div id="studentSectionQuestions" class="section">
+                    <div class="card">
+                        <h3>My Assigned Questions (CA Exams)</h3>
+                        <div id="studentAssignedQuestions">
+                            <div class="alert alert-info">Your assigned questions for CA exams will appear here after
+                                the coordinator creates a CA exam.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="examModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="examModalTitle">Create Exam</h3>
+                    <button class="modal-close" onclick="closeExamModal()">x</button>
+                </div>
+                <div id="examModalBody"></div>
+            </div>
+        </div>
+
+    </div>
+
+
+        <div id="exportLoader" class="export-loader" style="display:none;">
+        <div class="export-loader-content">
+            <div
+                style="width:50px;height:50px;border:5px solid var(--gray-200);border-top:5px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;">
+            </div>
+            <p>Preparing export...</p>
+        </div>
+    </div>
+
+    <div id="detailsLoader" class="details-loader" style="display:none;">
+        <div class="details-loader-content">
+            <div
+                style="width:50px;height:50px;border:5px solid var(--gray-200);border-top:5px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;">
+            </div>
+            <p>Loading details...</p>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase Initialization (ES Module) -->
+    <script type="module" src="firebase-init.js"></script>
+
+    <!-- Main Application -->
+    <script src="app.js"></script>
+
+</body>
+
+</html>
+
