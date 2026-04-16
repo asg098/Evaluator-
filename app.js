@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // app.js  -  Main Application Logic + Dark/Light Mode Toggle
 // ============================================================
 
@@ -7434,6 +7434,39 @@ Save All Students (${studentsSnap.size} students)
         // END QUESTION BANK FUNCTIONS
         // ========================================
 
+
+        // Expose showToast globally so firebase-init.js (module) can call it
+        window.showToast = showToast;
+
+        // Expose critical UI functions globally for module access
+        window.showDashboard = showDashboard;
+        window.hideAllDashboards = hideAllDashboards;
+        window.logout = logout;
+        window.calculateGrade = calculateGrade;
+        window.login = login;
+        window.signup = signup;
+        window.toggleAuth = toggleAuth;
+        window.toggleSignupFields = toggleSignupFields;
+        window.showForgotPassword = showForgotPassword;
+        window.showLogin = showLogin;
+        window.sendPasswordReset = sendPasswordReset;
+        window.adminCreateUser = adminCreateUser;
+        window.toggleAdminCreateFields = toggleAdminCreateFields;
+        window.loadAllUsers = loadAllUsers;
+        window.approveUser = approveUser;
+        window.rejectUser = rejectUser;
+        window.deleteUserFromManage = deleteUserFromManage;
+        window.toggleTeacherAccount = toggleTeacherAccount;
+
+        // Flush any toast messages that were queued before app.js loaded
+        if (typeof window._flushToastQueue === 'function') window._flushToastQueue(showToast);
+        window.__appReady = true;
+
+        // Render standalone portal notice if in local mode
+        if (window.__portalMode === 'local' && typeof window.renderPortalModeNotice === 'function') {
+            window.renderPortalModeNotice();
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             if (window.__portalMode === 'local' && typeof window.renderPortalModeNotice === 'function') {
                 window.renderPortalModeNotice();
@@ -7509,4 +7542,5 @@ Save All Students (${studentsSnap.size} students)
                 }
             });
         });
+
 

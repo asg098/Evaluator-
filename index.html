@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="light">
 
 <head>
@@ -1315,6 +1315,50 @@
         </div>
     </div>
 
+    <!-- Early stubs: prevents ReferenceError before app.js loads -->
+    <script>
+        // These stubs run before app.js (which is deferred).
+        // They ensure firebase-init.js module can safely call these functions.
+        window.currentUser = null;
+        window.__authListeners = [];
+        window.failedLoginAttempts = new Map();
+        window.__appReady = false;
+
+        // showToast stub - queues toast messages until real app.js showToast is ready
+        var _toastQueue = [];
+        window.showToast = function(msg, type, dur) {
+            _toastQueue.push({msg: msg, type: type || 'info', dur: dur});
+        };
+        window._flushToastQueue = function(realShowToast) {
+            _toastQueue.forEach(function(t) { realShowToast(t.msg, t.type, t.dur); });
+            _toastQueue = [];
+        };
+
+        // logout stub
+        window.logout = function() {
+            if (window.signOut && window.auth) window.signOut(window.auth);
+        };
+
+        // showDashboard stub (replaced by app.js)
+        window.showDashboard = function(role) {
+            // If app is ready but stub not yet replaced, queue the call
+            console.warn('[stub] showDashboard called with role:', role);
+        };
+
+        // hideAllDashboards stub (replaced by app.js)
+        window.hideAllDashboards = function() {};
+
+        // calculateGrade stub (replaced by app.js)
+        window.calculateGrade = function(pct) {
+            if (pct >= 90) return 'A+';
+            if (pct >= 75) return 'A';
+            if (pct >= 60) return 'B+';
+            if (pct >= 50) return 'B';
+            if (pct >= 40) return 'C';
+            if (pct >= 30) return 'D';
+            return 'F';
+        };
+    </script>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -1323,9 +1367,10 @@
     <script type="module" src="firebase-init.js"></script>
 
     <!-- Main Application -->
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 
 </body>
 
 </html>
+
 

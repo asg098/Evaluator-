@@ -35,8 +35,8 @@
             clearTimeout(idleTimer);
             idleTimer = setTimeout(() => {
                 if (window.currentUser) {
-                    showToast('Session expired due to inactivity. Please login again.', 'warning', 5000);
-                    logout();
+                    window.showToast('Session expired due to inactivity. Please login again.', 'warning', 5000);
+                    window.logout();
                 }
             }, IDLE_TIMEOUT);
         }
@@ -177,12 +177,12 @@
         function exportToExcel(data, filename, sheetName = 'Sheet1') {
             try {
                 if (!data || data.length === 0) {
-                    showToast('No data to export', 'warning');
+                    window.showToast('No data to export', 'warning');
                     return;
                 }
 
                 if (typeof XLSX === 'undefined') {
-                    showToast('Excel library not loaded. Please refresh the page.', 'danger');
+                    window.showToast('Excel library not loaded. Please refresh the page.', 'danger');
                     console.error('XLSX library not found');
                     return;
                 }
@@ -207,11 +207,11 @@
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
                 XLSX.writeFile(wb, `${filename}.xlsx`);
 
-                showToast('Excel file downloaded successfully', 'success');
+                window.showToast('Excel file downloaded successfully', 'success');
                 logAuditEvent('EXPORT_EXCEL', { filename, recordCount: data.length });
             } catch (error) {
                 console.error('Excel export error:', error);
-                showToast('Failed to export Excel file: ' + error.message, 'danger');
+                window.showToast('Failed to export Excel file: ' + error.message, 'danger');
             }
         }
 
@@ -226,7 +226,7 @@
                             const workbook = XLSX.read(data, { type: 'array' });
 
                             if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-                                showToast('Excel file has no sheets', 'danger');
+                                window.showToast('Excel file has no sheets', 'danger');
                                 reject(new Error('No sheets found'));
                                 return;
                             }
@@ -235,34 +235,34 @@
                             const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
                             if (jsonData.length === 0) {
-                                showToast('Excel file is empty', 'warning');
+                                window.showToast('Excel file is empty', 'warning');
                                 reject(new Error('Empty file'));
                                 return;
                             }
 
                             await callback(jsonData);
                             if (!suppressSuccessToast) {
-                                showToast(`Processed ${jsonData.length} records from Excel`, 'success');
+                                window.showToast(`Processed ${jsonData.length} records from Excel`, 'success');
                             }
                             await logAuditEvent('IMPORT_EXCEL', { recordCount: jsonData.length });
                             resolve(jsonData);
                         } catch (error) {
                             console.error('Excel parsing error:', error);
-                            showToast('Failed to parse Excel file. Please check format.', 'danger');
+                            window.showToast('Failed to parse Excel file. Please check format.', 'danger');
                             reject(error);
                         }
                     };
 
                     reader.onerror = function () {
                         const error = new Error('Failed to read Excel file');
-                        showToast('Failed to read Excel file', 'danger');
+                        window.showToast('Failed to read Excel file', 'danger');
                         reject(error);
                     };
 
                     reader.readAsArrayBuffer(file);
                 } catch (error) {
                     console.error('Excel import error:', error);
-                    showToast('Failed to import Excel file', 'danger');
+                    window.showToast('Failed to import Excel file', 'danger');
                     reject(error);
                 }
             });
@@ -292,7 +292,7 @@
                 const questionBank = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 if (questionBank.length === 0) {
-                    showToast('No questions found in question bank for this subject. Please add questions first.', 'warning');
+                    window.showToast('No questions found in question bank for this subject. Please add questions first.', 'warning');
                     return null;
                 }
 
@@ -327,7 +327,7 @@
                     );
 
                     if (unitQs.length === 0) {
-                        showToast(`No ${marksType}-mark questions in Unit ${unit}. Skipping.`, 'warning');
+                        window.showToast(`No ${marksType}-mark questions in Unit ${unit}. Skipping.`, 'warning');
                         continue;
                     }
 
@@ -377,7 +377,7 @@
                                 picked.push(q);
                             }
                             if (picked.length < needed) {
-                                showToast(`Unit ${unit}: only ${picked.length}/${needed} unique questions available for ${teacherEmail}. ` +
+                                window.showToast(`Unit ${unit}: only ${picked.length}/${needed} unique questions available for ${teacherEmail}. ` +
                                     `Add more questions to improve uniqueness.`, 'warning');
                             }
                         }
@@ -391,7 +391,7 @@
                 // Check any teacher got 0 questions
                 const emptyTeachers = teachers.filter(e => distribution[e].length === 0);
                 if (emptyTeachers.length === teachers.length) {
-                    showToast('Could not assign any questions. Please add more questions to the question bank.', 'danger');
+                    window.showToast('Could not assign any questions. Please add more questions to the question bank.', 'danger');
                     return null;
                 }
 
@@ -432,7 +432,7 @@
                 await Promise.all(saves);
 
                 const totalPerTeacher = distribution[teachers[0]]?.length || 0;
-                showToast(
+                window.showToast(
                     `Questions distributed! Each teacher gets ${totalPerTeacher} questions ` +
                     `(${units} units × ${targetQPerUnit} per unit). All unique!`,
                     'success', 6000
@@ -449,7 +449,7 @@
 
             } catch (error) {
                 console.error('Error in generateAndDistributeQuestions:', error);
-                showToast('Distribution failed: ' + error.message, 'danger');
+                window.showToast('Distribution failed: ' + error.message, 'danger');
                 return null;
             }
         }
@@ -569,7 +569,7 @@
                 const saveButtons = document.querySelectorAll('.btn-success');
                 if (saveButtons.length > 0) {
                     saveButtons[0].click();
-                    showToast('💾 Saving...', 'info', 1000);
+                    window.showToast('💾 Saving...', 'info', 1000);
                 }
             }
 
@@ -593,11 +593,11 @@
                     if (value > max) {
                         this.style.borderColor = '#ef4444';
                         this.style.backgroundColor = '#fee';
-                        showToast(`⚠️ Value cannot exceed ${max}`, 'warning', 2000);
+                        window.showToast(`⚠️ Value cannot exceed ${max}`, 'warning', 2000);
                     } else if (value < 0) {
                         this.style.borderColor = '#ef4444';
                         this.style.backgroundColor = '#fee';
-                        showToast('⚠️ Value cannot be negative', 'warning', 2000);
+                        window.showToast('⚠️ Value cannot be negative', 'warning', 2000);
                     } else {
                         this.style.borderColor = '#10b981';
                         this.style.backgroundColor = '#f0fdf4';
@@ -679,9 +679,9 @@
                     if (userData.isLocked) {
                         await window.signOut(auth);
                         document.getElementById('authContainer').style.display = 'block';
-                        hideAllDashboards();
+                        window.hideAllDashboards();
                         setTimeout(() => {
-                            if (typeof showToast === 'function') showToast('Your account has been locked. Please contact administrator.', 'danger', 7000);
+                            if (typeof showToast === 'function') window.showToast('Your account has been locked. Please contact administrator.', 'danger', 7000);
                         }, 300);
                         return;
                     }
@@ -689,9 +689,9 @@
                     if (userData.isDeleted || (userData.hasOwnProperty('isActive') && userData.isActive === false && userData.role !== 'teacher')) {
                         await window.signOut(auth);
                         document.getElementById('authContainer').style.display = 'block';
-                        hideAllDashboards();
+                        window.hideAllDashboards();
                         setTimeout(() => {
-                            if (typeof showToast === 'function') showToast('Your account has been deactivated. Please contact administrator.', 'danger', 7000);
+                            if (typeof showToast === 'function') window.showToast('Your account has been deactivated. Please contact administrator.', 'danger', 7000);
                         }, 300);
                         return;
                     }
@@ -703,17 +703,17 @@
                         document.getElementById('accessDeniedScreen').style.display = 'block';
                         document.getElementById('deniedEmail').textContent = userData.email;
                         document.getElementById('deniedRole').textContent = userData.role.toUpperCase();
-                        hideAllDashboards();
+                        window.hideAllDashboards();
                         return;
                     }
 
                     if (userData.role === 'teacher' && userData.isActive === false) {
                         await window.signOut(auth);
                         document.getElementById('authContainer').style.display = 'block';
-                        hideAllDashboards();
+                        window.hideAllDashboards();
 
                         setTimeout(() => {
-                            if (typeof showToast === 'function') showToast('Your account has been disabled by the coordinator. Please contact your department.', 'danger', 7000);
+                            if (typeof showToast === 'function') window.showToast('Your account has been disabled by the coordinator. Please contact your department.', 'danger', 7000);
                         }, 300);
                         return;
                     }
@@ -733,13 +733,13 @@
                             if (dashboardContent) dashboardContent.prepend(banner);
                         }, 500);
                     }
-                    showDashboard(window.currentUser.role);
+                    window.showDashboard(window.currentUser.role);
                 }
             } else {
                 window.currentUser = null;
                 document.getElementById('authContainer').style.display = 'block';
                 document.getElementById('accessDeniedScreen').style.display = 'none';
-                hideAllDashboards();
+                window.hideAllDashboards();
             }
         });
 
@@ -760,3 +760,4 @@
         window.deleteDoc = deleteDoc;
         window.orderBy = orderBy;
         window.limit = limit;
+
