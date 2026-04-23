@@ -1,8 +1,4 @@
-// ============================================================
-// app.js  -  Main Application Logic + Dark/Light Mode Toggle
-// ============================================================
 
-// ---- Theme System (Dark / Light Mode) ----
 (function initTheme() {
     var saved = localStorage.getItem('evaluator-theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
@@ -7542,5 +7538,3 @@ Save All Students (${studentsSnap.size} students)
                 }
             });
         });
-
-
