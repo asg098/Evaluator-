@@ -1,4 +1,9 @@
+// ============================================================
+// app.js  -  Main Application Logic + Dark/Light Mode Toggle
+// ============================================================
 
+// ---- Theme System (Dark / Light Mode) ----
+console.log("Evaluator v1.0.9: Loading main logic...");
 (function initTheme() {
     var saved = localStorage.getItem('evaluator-theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
@@ -49,692 +54,11 @@
     window._injectThemeToggles = injectToggleButtons;
 })();
 
-        (function bootstrapStandalonePortal() {
-            const preferLocalMode = window.location.protocol === 'file:' || localStorage.getItem('portalPreferredMode') === 'local';
-            const firebaseUnavailable = !window.auth || !window.collection || !window.getDocs;
 
-            if (!preferLocalMode && !firebaseUnavailable) {
-                return;
-            }
-
-            const STORAGE_KEY = 'portalStandaloneDataV1';
-            const AUTH_KEY = 'portalStandaloneAuthV1';
-            const APP_MODE = 'local';
-
-            function createId(prefix) {
-                return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-            }
-
-            function clone(value) {
-                return JSON.parse(JSON.stringify(value));
-            }
-
-            function createDocSnapshot(id, data) {
-                return {
-                    id,
-                    exists: () => !!data,
-                    data: () => clone(data)
-                };
-            }
-
-            function createQuerySnapshot(docs) {
-                return {
-                    docs,
-                    empty: docs.length === 0,
-                    size: docs.length,
-                    forEach(callback) {
-                        docs.forEach(callback);
-                    }
-                };
-            }
-
-            function loadStore() {
-                try {
-                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-                } catch (error) {
-                    console.error('Standalone store load failed:', error);
-                    return null;
-                }
-            }
-
-            function saveStore() {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__standaloneStore));
-            }
-
-            function getStore() {
-                if (!window.__standaloneStore) {
-                    window.__standaloneStore = loadStore() || seedStore();
-                    saveStore();
-                }
-                return window.__standaloneStore;
-            }
-
-            function loadAuthState() {
-                try {
-                    return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-                } catch (error) {
-                    return null;
-                }
-            }
-
-            function saveAuthState(state) {
-                if (!state) {
-                    localStorage.removeItem(AUTH_KEY);
-                } else {
-                    localStorage.setItem(AUTH_KEY, JSON.stringify(state));
-                }
-            }
-
-            function getCollectionData(name) {
-                const store = getStore();
-                if (!store.collections[name]) {
-                    store.collections[name] = {};
-                }
-                return store.collections[name];
-            }
-
-            function seedStore() {
-                const now = new Date().toISOString();
-                const collections = {
-                    users: {},
-                    students: {},
-                    departments: {},
-                    classes: {},
-                    divisions: {},
-                    subjects: {},
-                    teacher_assignments: {},
-                    coordinator_assignments: {},
-                    exams: {},
-                    results: {},
-                    audit_logs: {},
-                    failed_logins: {},
-                    security_events: {},
-                    questions: {},
-                    teacherQuestionUsage: {},
-                    ca_question_assignments: {}
-                };
-
-                const ids = {
-                    hod: 'hod_demo',
-                    coord: 'coord_demo',
-                    teacher: 'teacher_demo',
-                    studentUser: 'student_user_demo',
-                    student: 'student_demo',
-                    dept: 'dept_demo',
-                    class: 'class_demo',
-                    division: 'division_demo',
-                    subject: 'subject_demo',
-                    assignment: 'assignment_demo',
-                    coordAssign: 'coord_assignment_demo',
-                    exam: 'exam_demo',
-                    result: 'result_demo'
-                };
-
-                collections.users[ids.hod] = {
-                    name: 'Demo HOD',
-                    email: 'hod@portal.local',
-                    password: 'hod12345',
-                    role: 'hod',
-                    department: 'Computer Engineering',
-                    createdAt: now,
-                    approved: true,
-                    approvalStatus: 'approved',
-                    isActive: true
-                };
-
-                collections.users[ids.coord] = {
-                    name: 'Demo Coordinator',
-                    email: 'coordinator@portal.local',
-                    password: 'coord12345',
-                    role: 'coordinator',
-                    department: 'Computer Engineering',
-                    createdAt: now,
-                    approved: true,
-                    approvalStatus: 'approved',
-                    isActive: true
-                };
-
-                collections.users[ids.teacher] = {
-                    name: 'Demo Teacher',
-                    email: 'teacher@portal.local',
-                    password: 'teach12345',
-                    role: 'teacher',
-                    department: 'Computer Engineering',
-                    createdAt: now,
-                    approved: true,
-                    approvalStatus: 'approved',
-                    isActive: true,
-                    examRestricted: false
-                };
-
-                collections.users[ids.studentUser] = {
-                    name: 'Demo Student',
-                    email: 'student@portal.local',
-                    password: 'stud12345',
-                    role: 'student',
-                    enrollment: '2025001',
-                    createdAt: now,
-                    approved: true,
-                    approvalStatus: 'approved',
-                    isActive: true
-                };
-
-                collections.departments[ids.dept] = {
-                    name: 'Computer Engineering',
-                    code: 'CE',
-                    createdAt: now,
-                    createdBy: ids.hod
-                };
-
-                collections.classes[ids.class] = {
-                    name: 'Second Year Engineering',
-                    code: 'SE',
-                    academicYear: '2025-26',
-                    semester: 'SEM-1',
-                    createdAt: now
-                };
-
-                collections.divisions[ids.division] = {
-                    classId: ids.class,
-                    name: 'A',
-                    classTeacherEmail: 'teacher@portal.local',
-                    createdAt: now
-                };
-
-                collections.subjects[ids.subject] = {
-                    name: 'Data Structures',
-                    code: 'CE301',
-                    class: 'SE',
-                    division: 'A',
-                    academicYear: '2025-26',
-                    semester: 'SEM-1',
-                    createdAt: now
-                };
-
-                collections.students[ids.student] = {
-                    name: 'Demo Student',
-                    enrollment: '2025001',
-                    class: 'SE',
-                    division: 'A',
-                    email: 'student@portal.local',
-                    phone: '9876543210',
-                    rollNo: '01',
-                    academicYear: '2025-26',
-                    semester: 'SEM-1',
-                    createdAt: now
-                };
-
-                collections.coordinator_assignments[ids.coordAssign] = {
-                    department: 'Computer Engineering',
-                    email: 'coordinator@portal.local',
-                    assignedAt: now,
-                    assignedBy: ids.hod
-                };
-
-                collections.teacher_assignments[ids.assignment] = {
-                    teacherEmail: 'teacher@portal.local',
-                    subjectId: ids.subject,
-                    class: 'SE',
-                    division: 'A',
-                    assignedAt: now,
-                    assignedBy: ids.coord
-                };
-
-                collections.exams[ids.exam] = {
-                    name: 'Mid Term Assessment',
-                    subjectId: ids.subject,
-                    examType: 'standard',
-                    status: 'DRAFT',
-                    lifecycleState: 'DRAFT',
-                    criteria: [
-                        { name: 'Theory', maxMarks: 20 },
-                        { name: 'Problem Solving', maxMarks: 20 }
-                    ],
-                    totalMarks: 40,
-                    academicYear: '2025-26',
-                    semester: 'SEM-1',
-                    createdAt: now,
-                    createdBy: ids.teacher,
-                    createdByName: 'Demo Teacher'
-                };
-
-                collections.results[ids.result] = {
-                    examId: ids.exam,
-                    studentId: ids.student,
-                    enrollment: '2025001',
-                    studentName: 'Demo Student',
-                    marks: [18, 16],
-                    totalMarks: 34,
-                    percentage: 85,
-                    grade: 'A',
-                    status: 'COMPLETE',
-                    createdAt: now,
-                    importedAt: now,
-                    importedBy: ids.teacher
-                };
-
-                collections.audit_logs[createId('audit')] = {
-                    action: 'STANDALONE_SEEDED',
-                    performedBy: 'system',
-                    performedByName: 'System',
-                    performedByRole: 'system',
-                    timestamp: now,
-                    details: { mode: APP_MODE }
-                };
-
-                return { version: 1, mode: APP_MODE, collections };
-            }
-
-            function getAuthUserByEmail(email) {
-                const users = getCollectionData('users');
-                return Object.entries(users).find(([, data]) => (data.email || '').toLowerCase() === String(email || '').toLowerCase());
-            }
-
-            function sanitizeUserRecord(id, data) {
-                if (!data) return null;
-                return {
-                    uid: id,
-                    email: data.email,
-                    emailVerified: true
-                };
-            }
-
-            function notifyAuthListeners() {
-                const session = loadAuthState();
-                const users = getCollectionData('users');
-                const authUser = session && users[session.uid] ? sanitizeUserRecord(session.uid, users[session.uid]) : null;
-                (window.__authListeners || []).forEach((listener) => {
-                    Promise.resolve().then(() => listener(authUser));
-                });
-            }
-
-            function matchesWhere(data, clause) {
-                const fieldValue = data[clause.field];
-                if (clause.op === '==') return fieldValue === clause.value;
-                if (clause.op === 'in') return Array.isArray(clause.value) && clause.value.includes(fieldValue);
-                return true;
-            }
-
-            function sortDocs(entries, sorter) {
-                const direction = sorter.direction === 'desc' ? -1 : 1;
-                return entries.sort((a, b) => {
-                    const av = a[1]?.[sorter.field];
-                    const bv = b[1]?.[sorter.field];
-                    if (av === bv) return 0;
-                    if (av === undefined || av === null) return 1;
-                    if (bv === undefined || bv === null) return -1;
-                    return av > bv ? direction : -direction;
-                });
-            }
-
-            window.__portalMode = APP_MODE;
-            localStorage.setItem('portalPreferredMode', APP_MODE);
-            window.auth = { mode: APP_MODE, name: 'primary' };
-            window.secondaryAuth = { mode: APP_MODE, name: 'secondary' };
-            window.db = { mode: APP_MODE };
-            window.failedLoginAttempts = window.failedLoginAttempts || new Map();
-
-            if (!window.logFailedLogin) {
-                window.logFailedLogin = async function (email, errorCode) {
-                    const attempts = (window.failedLoginAttempts.get(email) || 0) + 1;
-                    window.failedLoginAttempts.set(email, attempts);
-                    await window.addDoc(window.collection(window.db, 'failed_logins'), {
-                        email,
-                        errorCode,
-                        timestamp: new Date().toISOString()
-                    });
-                    return attempts;
-                };
-            }
-
-            if (!window.clearFailedAttempts) {
-                window.clearFailedAttempts = async function (email) {
-                    window.failedLoginAttempts.delete(email);
-                };
-            }
-
-            if (!window.lockAccount) {
-                window.lockAccount = async function (email) {
-                    const match = getAuthUserByEmail(email);
-                    if (match) {
-                        const users = getCollectionData('users');
-                        users[match[0]].isLocked = true;
-                        users[match[0]].lockedAt = new Date().toISOString();
-                        saveStore();
-                    }
-                };
-            }
-
-            if (!window.logAuditEvent) {
-                window.logAuditEvent = async function (action, details) {
-                    await window.addDoc(window.collection(window.db, 'audit_logs'), {
-                        action,
-                        details: details || {},
-                        performedBy: window.currentUser?.uid || 'anonymous',
-                        performedByName: window.currentUser?.name || 'Anonymous',
-                        performedByRole: window.currentUser?.role || 'none',
-                        timestamp: new Date().toISOString()
-                    });
-                };
-            }
-
-            if (!window.logSecurityEvent) {
-                window.logSecurityEvent = async function (type, details) {
-                    await window.addDoc(window.collection(window.db, 'security_events'), {
-                        type,
-                        details: details || {},
-                        userId: window.currentUser?.uid || 'anonymous',
-                        timestamp: new Date().toISOString()
-                    });
-                };
-            }
-
-            if (!window.validateForm) {
-                window.validateForm = function (fields, rules) {
-                    const errors = [];
-                    for (const [field, value] of Object.entries(fields)) {
-                        const rule = rules[field];
-                        if (!rule) continue;
-                        if (rule.required && (!value || value.toString().trim() === '')) errors.push(`${field} is required`);
-                        if (rule.minLength && value && value.length < rule.minLength) errors.push(`${field} must be at least ${rule.minLength} characters`);
-                        if (rule.pattern && value && !rule.pattern.test(value)) errors.push(rule.patternMessage || `${field} format is invalid`);
-                    }
-                    return { valid: errors.length === 0, errors };
-                };
-            }
-
-            if (!window.exportToExcel) {
-                window.exportToExcel = function (data, filename) {
-                    if (!data || !data.length) return;
-                    const headers = Object.keys(data[0]);
-                    const rows = [headers.join(',')].concat(data.map((row) => headers.map((header) => JSON.stringify(row[header] ?? '')).join(',')));
-                    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `${filename}.csv`;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    URL.revokeObjectURL(url);
-                };
-            }
-
-            if (!window.downloadExcelTemplate) {
-                window.downloadExcelTemplate = function (headers, filename) {
-                    const template = [headers.reduce((acc, header) => {
-                        acc[header] = '';
-                        return acc;
-                    }, {})];
-                    window.exportToExcel(template, `${filename}_template`);
-                };
-            }
-
-            if (!window.importFromExcel) {
-                window.importFromExcel = function () {
-                    return Promise.reject(new Error('Excel import is unavailable in standalone mode unless the SheetJS library is loaded.'));
-                };
-            }
-
-            if (!window.roundMarks) {
-                window.roundMarks = function (value) {
-                    if (value === null || value === undefined || value === '') return 0;
-                    const num = parseFloat(value);
-                    return Number.isFinite(num) ? Math.round(num * 100) / 100 : 0;
-                };
-            }
-
-            if (!window.formatMarks) {
-                window.formatMarks = function (value, decimals = 2) {
-                    return window.roundMarks(value).toFixed(decimals);
-                };
-            }
-
-            if (!window.calculatePercentage) {
-                window.calculatePercentage = function (obtained, total) {
-                    if (!total || total <= 0) return 0;
-                    return window.roundMarks((obtained / total) * 100);
-                };
-            }
-
-            window.createUserWithEmailAndPassword = async function (localAuth, email, password) {
-                const normalizedEmail = String(email || '').trim().toLowerCase();
-                if (!normalizedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                    const error = new Error('Invalid email address');
-                    error.code = 'auth/invalid-email';
-                    throw error;
-                }
-                if (String(password || '').length < 6) {
-                    const error = new Error('Password should be at least 6 characters');
-                    error.code = 'auth/weak-password';
-                    throw error;
-                }
-                const existing = getAuthUserByEmail(normalizedEmail);
-                if (existing) {
-                    const error = new Error('Email already in use');
-                    error.code = 'auth/email-already-in-use';
-                    throw error;
-                }
-
-                const uid = createId('user');
-                const users = getCollectionData('users');
-                users[uid] = {
-                    email: normalizedEmail,
-                    password,
-                    createdAt: new Date().toISOString(),
-                    isActive: true
-                };
-                saveStore();
-
-                if (!localAuth || localAuth.name !== 'secondary') {
-                    saveAuthState({ uid });
-                    notifyAuthListeners();
-                }
-
-                return { user: sanitizeUserRecord(uid, users[uid]) };
-            };
-
-            window.signInWithEmailAndPassword = async function (localAuth, email, password) {
-                const existing = getAuthUserByEmail(email);
-                if (!existing || existing[1].password !== password) {
-                    const error = new Error('Invalid email or password');
-                    error.code = 'auth/invalid-credential';
-                    throw error;
-                }
-                saveAuthState({ uid: existing[0] });
-                notifyAuthListeners();
-                return { user: sanitizeUserRecord(existing[0], existing[1]) };
-            };
-
-            window.signOut = async function (localAuth) {
-                if (!localAuth || localAuth.name !== 'secondary') {
-                    saveAuthState(null);
-                    notifyAuthListeners();
-                }
-            };
-
-            window.onAuthStateChanged = function (localAuth, callback) {
-                window.__authListeners = window.__authListeners || [];
-                window.__authListeners.push(callback);
-                notifyAuthListeners();
-                return function unsubscribe() {
-                    window.__authListeners = (window.__authListeners || []).filter((listener) => listener !== callback);
-                };
-            };
-
-            window.sendPasswordResetEmail = async function (localAuth, email) {
-                const existing = getAuthUserByEmail(email);
-                if (!existing) {
-                    const error = new Error('No user found');
-                    error.code = 'auth/user-not-found';
-                    throw error;
-                }
-                return true;
-            };
-
-            window.sendEmailVerification = async function (user) {
-                return true;
-            };
-
-            window.collection = function (dbRef, name) {
-                return { kind: 'collection', name };
-            };
-
-            window.doc = function (dbOrCollection, collectionName, docId) {
-                if (dbOrCollection && dbOrCollection.kind === 'collection') {
-                    return { kind: 'doc', collection: dbOrCollection.name, id: collectionName };
-                }
-                return { kind: 'doc', collection: collectionName, id: docId };
-            };
-
-            window.where = function (field, op, value) {
-                return { kind: 'where', field, op, value };
-            };
-
-            window.orderBy = function (field, direction) {
-                return { kind: 'orderBy', field, direction: direction || 'asc' };
-            };
-
-            window.limit = function (count) {
-                return { kind: 'limit', count };
-            };
-
-            window.query = function (base, ...constraints) {
-                const normalizedBase = base && base.kind === 'query'
-                    ? { collection: base.collection, constraints: base.constraints.slice() }
-                    : { collection: base.name, constraints: [] };
-                return {
-                    kind: 'query',
-                    collection: normalizedBase.collection,
-                    constraints: normalizedBase.constraints.concat(constraints)
-                };
-            };
-
-            window.addDoc = async function (collectionRef, data) {
-                const collectionData = getCollectionData(collectionRef.name);
-                const id = createId(collectionRef.name);
-                collectionData[id] = clone(data);
-                saveStore();
-                return { id };
-            };
-
-            window.setDoc = async function (docRef, data) {
-                const collectionData = getCollectionData(docRef.collection);
-                const existing = collectionData[docRef.id] || {};
-                const nextValue = clone(data);
-                if (existing.password && !nextValue.password) {
-                    nextValue.password = existing.password;
-                }
-                collectionData[docRef.id] = nextValue;
-                saveStore();
-            };
-
-            window.getDoc = async function (docRef) {
-                const collectionData = getCollectionData(docRef.collection);
-                return createDocSnapshot(docRef.id, collectionData[docRef.id] || null);
-            };
-
-            window.getDocs = async function (queryRef) {
-                const collectionName = queryRef.kind === 'collection' ? queryRef.name : queryRef.collection;
-                const constraints = queryRef.kind === 'query' ? queryRef.constraints : [];
-                let entries = Object.entries(getCollectionData(collectionName));
-
-                constraints.filter((item) => item.kind === 'where').forEach((clause) => {
-                    entries = entries.filter(([, data]) => matchesWhere(data, clause));
-                });
-
-                constraints.filter((item) => item.kind === 'orderBy').forEach((sorter) => {
-                    entries = sortDocs(entries, sorter);
-                });
-
-                const limiter = constraints.find((item) => item.kind === 'limit');
-                if (limiter) entries = entries.slice(0, limiter.count);
-
-                const docs = entries.map(([id, data]) => ({
-                    id,
-                    data: () => clone(data)
-                }));
-
-                return createQuerySnapshot(docs);
-            };
-
-            window.updateDoc = async function (docRef, updates) {
-                const collectionData = getCollectionData(docRef.collection);
-                collectionData[docRef.id] = Object.assign({}, collectionData[docRef.id] || {}, clone(updates));
-                saveStore();
-            };
-
-            window.deleteDoc = async function (docRef) {
-                const collectionData = getCollectionData(docRef.collection);
-                delete collectionData[docRef.id];
-                saveStore();
-            };
-
-            window.resetStandalonePortal = function () {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(AUTH_KEY);
-                localStorage.setItem('portalPreferredMode', APP_MODE);
-                window.__standaloneStore = null;
-                saveAuthState(null);
-                notifyAuthListeners();
-            };
-
-            window.fillStandaloneCredentials = function (email, password) {
-                const emailInput = document.getElementById('loginEmail');
-                const passwordInput = document.getElementById('loginPassword');
-                if (emailInput) emailInput.value = email;
-                if (passwordInput) passwordInput.value = password;
-            };
-
-            window.renderPortalModeNotice = function () {
-                if (document.getElementById('portalModeNotice')) return;
-                const loginForm = document.getElementById('loginForm');
-                if (!loginForm) return;
-
-                const panel = document.createElement('div');
-                panel.id = 'portalModeNotice';
-                panel.className = 'alert alert-info';
-                panel.style.marginBottom = '18px';
-                panel.innerHTML = `
- <strong>Standalone mode is active.</strong> This portal saves data on this device so every dashboard can work without Firebase setup.
- <div style="margin-top:10px;font-size:12px;line-height:1.6;">
- <div><strong>HOD:</strong> hod@portal.local / hod12345</div>
- <div><strong>Coordinator:</strong> coordinator@portal.local / coord12345</div>
- <div><strong>Teacher:</strong> teacher@portal.local / teach12345</div>
- <div><strong>Student:</strong> student@portal.local / stud12345</div>
- </div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
- <button class="btn btn-primary btn-sm" type="button" onclick="fillStandaloneCredentials('hod@portal.local','hod12345')">Use HOD Login</button>
- <button class="btn btn-secondary btn-sm" type="button" onclick="fillStandaloneCredentials('teacher@portal.local','teach12345')">Use Teacher Login</button>
- <button class="btn btn-danger btn-sm" type="button" onclick="if(confirm('Reset standalone data and restore clean demo records?')){ resetStandalonePortal(); location.reload(); }">Reset Demo Data</button>
- </div>
- `;
-                loginForm.prepend(panel);
-            };
-        })();
-
-        function collection(...a) { return window.collection(...a); }
-        function addDoc(...a) { return window.addDoc(...a); }
-        function doc(...a) { return window.doc(...a); }
-        function setDoc(...a) { return window.setDoc(...a); }
-        function getDoc(...a) { return window.getDoc(...a); }
-        function getDocs(...a) { return window.getDocs(...a); }
-        function query(...a) { return window.query(...a); }
-        function where(...a) { return window.where(...a); }
-        function updateDoc(...a) { return window.updateDoc(...a); }
-        function deleteDoc(...a) { return window.deleteDoc(...a); }
-        function orderBy(...a) { return window.orderBy(...a); }
-        function limit(...a) { return window.limit(...a); }
-        function signOut(...a) { return window.signOut(...a); }
-        function logAuditEvent(...a) { return window.logAuditEvent ? window.logAuditEvent(...a) : Promise.resolve(); }
-        function logSecurityEvent(...a) { return window.logSecurityEvent ? window.logSecurityEvent(...a) : Promise.resolve(); }
-
-        function importFromExcel(...a) { return window.importFromExcel ? window.importFromExcel(...a) : Promise.reject(new Error('importFromExcel not ready')); }
-
-        function exportToExcel(...a) { return window.exportToExcel ? window.exportToExcel(...a) : void 0; }
-        function validateForm(...a) { return window.validateForm ? window.validateForm(...a) : { valid: false, errors: ['System not ready'] }; }
-        function generateAndDistributeQuestions(...a) { return window.generateAndDistributeQuestions ? window.generateAndDistributeQuestions(...a) : Promise.reject(new Error('Not ready')); }
-        function getTeacherAssignedQuestions(...a) { return window.getTeacherAssignedQuestions ? window.getTeacherAssignedQuestions(...a) : Promise.resolve([]); }
+        // Universal Firebase Bridging Layer
+        let _evalExamCache = {};
+        // The following functions are now provided globally by firebase-init.js
+        // to support both cloud and local file modes.
 
 
         function getAcademicYear() { var el = document.getElementById('academicYear'); return el ? el.value : ''; }
@@ -751,6 +75,106 @@
             }
             event.preventDefault();
         });
+
+        // UI Loading Functions
+        function sanitizeString(str, maxLength = 120) {
+            if (!str) return 'N/A';
+            let s = String(str).trim();
+            // Basic HTML escaping
+            s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (s.length > maxLength) s = s.substring(0, maxLength) + '...';
+            // Remove NULL and dangerous control chars but keep most others
+            return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        }
+
+        window.deleteStudent = async function(studentId, name) {
+            if (!confirm(`Are you sure you want to delete student "${sanitizeString(name)}" and all their associated results?`)) return;
+            
+            _showLoading('Deleting student...');
+            try {
+                // Delete results first
+                const resultsSnap = await window.getDocs(window.query(window.collection(window.db, 'results'), window.where('studentId', '==', studentId)));
+                for (const d of resultsSnap.docs) {
+                    await window.deleteDoc(window.doc(window.db, 'results', d.id));
+                }
+                
+                // Delete student
+                await window.deleteDoc(window.doc(window.db, 'students', studentId));
+                
+                showToast('Student deleted successfully', 'success');
+                if (typeof loadStudentsList === 'function') loadStudentsList();
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to delete student: ' + err.message, 'danger');
+            } finally {
+                _hideLoading();
+            }
+        };
+
+        // UI Loading Functions (Defined globally early to prevent errors)
+        var _showLoading = function (message) {
+            const overlay = document.getElementById('globalLoadingMsg');
+            const textEl = document.getElementById('globalLoadingText');
+            if (overlay && textEl) {
+                textEl.textContent = message || 'Processing...';
+                overlay.style.display = 'flex';
+            }
+        };
+        var _hideLoading = function () {
+            const overlay = document.getElementById('globalLoadingMsg');
+            if (overlay) overlay.style.display = 'none';
+        };
+
+        window.showLoadingMessage = _showLoading;
+        window.hideLoadingMessage = _hideLoading;
+
+        async function logAuditEvent(action, metadata = {}) {
+            if (!window.currentUser) return;
+            try {
+                await window.addDoc(window.collection(window.db, 'audit_logs'), {
+                    action,
+                    performedBy: window.currentUser.uid,
+                    performedByName: window.currentUser.name,
+                    performedByRole: window.currentUser.role,
+                    timestamp: new Date().toISOString(),
+                    metadata
+                });
+            } catch (e) {
+                console.error('Audit log failed:', e);
+            }
+        }
+        window.logAuditEvent = logAuditEvent;
+
+        /**
+         * Generic form validation helper
+         */
+        function validateForm(data, schema) {
+            const errors = [];
+            let valid = true;
+
+            for (const field in schema) {
+                const rules = schema[field];
+                const value = data[field];
+
+                if (rules.required && (value === undefined || value === null || value === '')) {
+                    errors.push(`${field} is required`);
+                    valid = false;
+                }
+
+                if (rules.minLength && value && value.toString().length < rules.minLength) {
+                    errors.push(`${field} must be at least ${rules.minLength} characters`);
+                    valid = false;
+                }
+
+                if (rules.custom && !rules.custom(value)) {
+                    errors.push(rules.customMessage || `${field} failed custom validation`);
+                    valid = false;
+                }
+            }
+
+            return { valid, errors };
+        }
+        window.validateForm = validateForm;
 
 
         function showForgotPassword() {
@@ -833,7 +257,7 @@
                 return;
             }
 
-            if ((role === 'hod' || role === 'coordinator' || role === 'principal' || role === 'dean') && !department) {
+            if ((role === 'hod' || role === 'coordinator') && !department) {
                 showToast('Please enter department', 'warning');
                 return;
             }
@@ -951,8 +375,14 @@
                 return;
             }
 
-            try {
+            const btn = document.getElementById('adminCreateBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('loading');
+                btn.textContent = 'Creating Account...';
+            }
 
+            try {
                 const duplicateEmailCheck = await window.getDocs(
                     window.query(
                         window.collection(window.db, 'users'),
@@ -962,6 +392,7 @@
 
                 if (!duplicateEmailCheck.empty) {
                     showToast('Error: A user with this email already exists!', 'danger', 5000);
+                    if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.textContent = 'Create Account'; }
                     return;
                 }
 
@@ -973,7 +404,8 @@
                 );
 
                 if (!duplicateNameCheck.empty) {
-                    if (!confirm(`⚠️ WARNING: A user with name "${name}" already exists.\n\nContinue creating account anyway?`)) {
+                    if (!confirm(`\u26A0\uFE0F WARNING: A user with name "${name}" already exists.\n\nContinue creating account anyway?`)) {
+                        if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.textContent = 'Create Account'; }
                         return;
                     }
                 }
@@ -984,6 +416,7 @@
 
                     if (!duplicateCheck.empty) {
                         showToast('Enrollment number already exists!', "danger");
+                        if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.textContent = 'Create Account'; }
                         return;
                     }
                 }
@@ -1049,7 +482,7 @@
                 document.getElementById('adminCreateEnrollment').value = '';
                 document.getElementById('adminCreateDepartment').value = '';
                 loadAllUsers();
-                showToast(`✅ User created successfully!\n\nEmail: ${email}\nTemporary Password: ${password}\n\n⚠️ Important: Ask user to change password after first login.`, 'success', 10000);
+                showToast(`\u2705 User created successfully!\n\nEmail: ${email}\nTemporary Password: ${password}\n\n\u26A0\uFE0F Important: Ask user to change password after first login.`, 'success', 10000);
 
             } catch (error) {
                 if (error.code === 'auth/email-already-in-use') {
@@ -1060,6 +493,12 @@
                     showToast('Invalid email address format.', "danger");
                 } else {
                     showToast('Error: ' + error.message, 'danger');
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                    btn.textContent = 'Create Account';
                 }
             }
         }
@@ -1112,7 +551,7 @@
                         ? '<span class="account-status-on">ON</span>'
                         : '<span class="account-status-off">OFF</span>';
                     row.innerHTML = `
- <td><strong>${data.name}</strong></td>
+ <td><strong>${sanitizeString(data.name)}</strong></td>
 <td style="font-size:12px;">${data.email}</td>
 <td><span class="badge badge-info">${data.role.toUpperCase()}</span></td>
 <td>${extraInfo}</td>
@@ -1151,7 +590,18 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const btn = document.getElementById('loginBtn');
             if (btn) { btn.classList.add('loading'); btn.textContent = 'Logging in...'; }
 
+            if (!window.signInWithEmailAndPassword) {
+                showToast('Firebase failed to load. You must use a local web server (like VS Code Live Server) to run this application.', 'danger', 10000);
+                if (btn) { btn.classList.remove('loading'); btn.textContent = 'Login'; }
+                return;
+            }
+
             try {
+                if (!email || !password) {
+                    showToast('Please enter both email and password', 'warning');
+                    if (btn) { btn.classList.remove('loading'); btn.textContent = 'Login'; }
+                    return;
+                }
                 const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
 
@@ -1187,7 +637,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     return;
                 }
 
-                await window.clearFailedAttempts(email);
+                if (window.clearFailedAttempts) await window.clearFailedAttempts(email);
 
                 try {
                     await window.addDoc(window.collection(window.db, 'audit_logs'), {
@@ -1199,12 +649,12 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     });
                 } catch (logError) { }
 
-                window.resetIdleTimer();
+                if (typeof window.resetIdleTimer === "function") window.resetIdleTimer();
 
             } catch (error) {
                 if (btn) { btn.classList.remove('loading'); btn.textContent = 'Login'; }
 
-                const attempts = await window.logFailedLogin(email, error.code);
+                const attempts = window.logFailedLogin ? await window.logFailedLogin(email, error.code) : 0;
 
                 try {
                     await window.addDoc(window.collection(window.db, 'audit_logs'), {
@@ -1217,7 +667,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 } catch (logError) { }
 
                 if (attempts >= 5) {
-                    await window.lockAccount(email);
+                if (window.lockAccount) await window.lockAccount(email);
                     showToast('Account locked due to too many failed attempts. Please contact administrator.', 'danger', 7000);
                     return;
                 }
@@ -1276,6 +726,10 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             if (typeof window._injectThemeToggles === 'function') {
                 setTimeout(window._injectThemeToggles, 60);
             }
+            // Update Sync UI
+            if (window.OfflineSyncManager && typeof window.OfflineSyncManager.updateUI === 'function') {
+                window.OfflineSyncManager.updateUI();
+            }
         }
 
         function hideAllDashboards() {
@@ -1285,67 +739,8 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             document.getElementById('studentDashboard').classList.remove('active');
         }
 
-        if (window.__portalMode === 'local' && typeof window.onAuthStateChanged === 'function' && !window.__localPortalAuthAttached) {
-            window.__localPortalAuthAttached = true;
-            window.onAuthStateChanged(window.auth, async (user) => {
-                if (user) {
-                    const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-
-                        if (userData.isLocked) {
-                            await window.signOut(window.auth);
-                            document.getElementById('authContainer').style.display = 'block';
-                            hideAllDashboards();
-                            setTimeout(() => {
-                                if (typeof showToast === 'function') showToast('Your account has been locked. Please contact administrator.', 'danger', 7000);
-                            }, 300);
-                            return;
-                        }
-
-                        if (userData.isDeleted || (userData.hasOwnProperty('isActive') && userData.isActive === false && userData.role !== 'teacher')) {
-                            await window.signOut(window.auth);
-                            document.getElementById('authContainer').style.display = 'block';
-                            hideAllDashboards();
-                            setTimeout(() => {
-                                if (typeof showToast === 'function') showToast('Your account has been deactivated. Please contact administrator.', 'danger', 7000);
-                            }, 300);
-                            return;
-                        }
-
-                        const autoApprovedRoles = ['student', 'hod'];
-                        const needsApproval = !autoApprovedRoles.includes(userData.role) && (!userData.approved || userData.approvalStatus !== 'approved');
-                        if (needsApproval) {
-                            document.getElementById('authContainer').style.display = 'none';
-                            document.getElementById('accessDeniedScreen').style.display = 'block';
-                            document.getElementById('deniedEmail').textContent = userData.email;
-                            document.getElementById('deniedRole').textContent = userData.role.toUpperCase();
-                            hideAllDashboards();
-                            return;
-                        }
-
-                        if (userData.role === 'teacher' && userData.isActive === false) {
-                            await window.signOut(window.auth);
-                            document.getElementById('authContainer').style.display = 'block';
-                            hideAllDashboards();
-                            setTimeout(() => {
-                                if (typeof showToast === 'function') showToast('Your account has been disabled by the coordinator. Please contact your department.', 'danger', 7000);
-                            }, 300);
-                            return;
-                        }
-
-                        window.currentUser = { ...userData, uid: user.uid };
-                        if (typeof window.resetIdleTimer === 'function') window.resetIdleTimer();
-                        showDashboard(window.currentUser.role);
-                    }
-                } else {
-                    window.currentUser = null;
-                    document.getElementById('authContainer').style.display = 'block';
-                    document.getElementById('accessDeniedScreen').style.display = 'none';
-                    hideAllDashboards();
-                }
-            });
-        }
+        
+        
 
         async function createDepartment() {
             const name = document.getElementById('deptName').value.trim();
@@ -1408,7 +803,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     const row = tbody.insertRow();
                     row.innerHTML = `
- <td><strong>${data.name}</strong></td>
+ <td><strong>${sanitizeString(data.name)}</strong></td>
 <td>${data.code}</td>
 <td>${created}</td> `;
                 }
@@ -1439,7 +834,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     const row = tbody.insertRow();
                     row.innerHTML = `
- <td><strong>${data.name}</strong></td>
+ <td><strong>${sanitizeString(data.name)}</strong></td>
 <td>${data.email}</td>
 <td><span class="badge badge-warning">${data.role.toUpperCase()}</span></td>
 <td>${data.department || '-'}</td>
@@ -1561,9 +956,20 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         async function loadHODData() {
             try {
-                const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
-                const pendingSnap = await window.getDocs(window.query(window.collection(window.db, 'users'), window.where('approvalStatus', '==', 'pending')));
                 const hodDept = window.currentUser.department || window.currentUser.departmentId;
+                
+                // Departments are global usually, but stats should be filtered
+                const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+                
+                // Pending approvals filtered by department
+                let pendingQuery = window.query(window.collection(window.db, 'users'), window.where('approvalStatus', '==', 'pending'));
+                if (hodDept) {
+                    pendingQuery = window.query(window.collection(window.db, 'users'), 
+                        window.where('approvalStatus', '==', 'pending'),
+                        window.where('department', '==', hodDept));
+                }
+                const pendingSnap = await window.getDocs(pendingQuery);
+
                 let coordQuery = window.query(window.collection(window.db, 'users'),
                     window.where('role', '==', 'coordinator'),
                     window.where('approved', '==', true));
@@ -1573,6 +979,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         window.where('approved', '==', true),
                         window.where('department', '==', hodDept));
                 }
+                
                 let teacherQuery = window.query(window.collection(window.db, 'users'),
                     window.where('role', '==', 'teacher'),
                     window.where('approved', '==', true));
@@ -1582,12 +989,27 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         window.where('approved', '==', true),
                         window.where('department', '==', hodDept));
                 }
+                
+                // Filter students by department if they have the field, or count all for now if not
+                // Based on current schema, let's check if we can filter subjects first then students
+                let studentQuery = window.query(window.collection(window.db, 'students'), window.limit(1000));
+                if (hodDept) {
+                    studentQuery = window.query(window.collection(window.db, 'students'), 
+                        window.where('department', '==', hodDept), 
+                        window.limit(1000));
+                }
+
+                let examQuery = window.collection(window.db, 'exams');
+                if (hodDept) {
+                    examQuery = window.query(window.collection(window.db, 'exams'), 
+                        window.where('department', '==', hodDept));
+                }
 
                 const [coordinatorsSnap, teachersSnap, studentsSnap, examsSnap] = await Promise.all([
                     window.getDocs(coordQuery),
                     window.getDocs(teacherQuery),
-                    window.getDocs(window.query(window.collection(window.db, 'students'), window.limit(1000))),
-                    window.getDocs(window.collection(window.db, 'exams'))
+                    window.getDocs(studentQuery),
+                    window.getDocs(examQuery)
                 ]);
 
                 document.getElementById('hodTotalDepts').textContent = deptsSnap.size;
@@ -1752,7 +1174,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     q = window.query(q, window.where('action', '==', filter));
                 }
 
-                q = window.query(q, window.orderBy('timestamp', 'desc'));
+                q = window.query(q, window.orderBy('timestamp', 'desc'), window.limit(100));
 
                 const snapshot = await window.getDocs(q);
 
@@ -1761,7 +1183,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     return;
                 }
 
-                let html = '<table><thead><tr><th>Date/Time</th><th>Action</th><th>Details</th><th>Performed By</th><th>Academic Session</th></tr></thead><tbody>';
+                let html = '<div class="table-container"><table><thead><tr><th>Date/Time</th><th>Action</th><th>Details</th><th>Performed By</th><th>Academic Session</th></tr></thead><tbody>';
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -1769,8 +1191,11 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     let details = '';
                     switch (data.action) {
+                        case 'TEACHER_FINALIZED_EVALUATION':
+                            details = `Exam: ${data.examName || 'N/A'}`;
+                            break;
                         case 'ADD_STUDENT':
-                            details = `Student: ${data.studentName} (${data.studentEnrollment})`;
+                            details = `Student: ${sanitizeString(data.studentName)} (${data.studentEnrollment})`;
                             break;
                         case 'BULK_IMPORT_STUDENTS':
                             details = `Imported: ${data.successCount}, Skipped: ${data.skipCount}`;
@@ -1797,8 +1222,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 <td>${data.academicYear || 'N/A'} / ${data.semester || 'N/A'}</td>
 </tr> `;
                 });
-
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 auditDiv.innerHTML = html;
             } catch (error) {
                 auditDiv.innerHTML = '<div class="alert alert-danger">Error loading audit logs: ' + error.message + '</div>';
@@ -1829,15 +1253,33 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         async function loadCoordinatorData() {
             const year = document.getElementById('academicYear').value;
             const semester = document.getElementById('semester').value;
+            const coordDept = window.currentUser.department;
             try {
+                let subjectsQuery = window.query(window.collection(window.db, 'subjects'),
+                    window.where('academicYear', '==', year),
+                    window.where('semester', '==', semester));
+                if (coordDept) {
+                    subjectsQuery = window.query(subjectsQuery, window.where('department', '==', coordDept));
+                }
+
+                let studentsQuery = window.query(window.collection(window.db, 'students'), 
+                    window.where('academicYear', '==', year),
+                    window.where('semester', '==', semester));
+                if (coordDept) {
+                    studentsQuery = window.query(studentsQuery, window.where('department', '==', coordDept));
+                }
+
+                let examsQuery = window.query(window.collection(window.db, 'exams'),
+                    window.where('academicYear', '==', year),
+                    window.where('semester', '==', semester));
+                if (coordDept) {
+                    examsQuery = window.query(examsQuery, window.where('department', '==', coordDept));
+                }
+
                 const [subjectsSnap, studentsSnap, examsSnap] = await Promise.all([
-                    window.getDocs(window.query(window.collection(window.db, 'subjects'),
-                        window.where('academicYear', '==', year),
-                        window.where('semester', '==', semester))),
-                    window.getDocs(window.query(window.collection(window.db, 'students'), window.limit(1000))),
-                    window.getDocs(window.query(window.collection(window.db, 'exams'),
-                        window.where('academicYear', '==', year),
-                        window.where('semester', '==', semester)))
+                    window.getDocs(subjectsQuery),
+                    window.getDocs(studentsQuery),
+                    window.getDocs(examsQuery)
                 ]);
                 const nonFinalizedIds = examsSnap.docs.filter(d => d.data().status !== 'FINALIZED').map(d => d.id);
                 let pendingCount = 0;
@@ -1887,15 +1329,17 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                 const options = snapshot.docs.map(doc => {
                     const s = doc.data();
-                    return `<option value="${doc.id}">${s.name} (${s.code}) - ${s.class} ${s.division}</option>`;
+                    const shortId = doc.id.substring(0, 6);
+                    return `<option value="${doc.id}">${s.name} (${s.code}) [ID:${shortId}] - ${s.class} ${s.division}</option>`;
                 }).join('');
 
                 const baseOption = '<option value="">Select Subject</option>';
 
                 const dropdowns = [
                     'qbSubjectSelect',
+                    'qbPDFSubjectSelect',
                     'qbFilterSubject',
-                    'distSubject',
+                    'qDistSubject',
                     'historySubject'
                 ];
 
@@ -1922,7 +1366,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             progressDiv.innerHTML = '<div class="loading">Calculating progress...</div>';
 
             try {
-                let html = '<table><thead><tr><th>Exam</th><th>Status</th><th>Evaluated</th><th>Incomplete</th><th>Completion %</th><th>Action</th></tr></thead><tbody>';
+                let html = '<div class="table-container"><table><thead><tr><th>Exam</th><th>Status</th><th>Evaluated</th><th>Incomplete</th><th>Completion %</th><th>Action</th></tr></thead><tbody>';
 
                 for (const examDoc of examsSnap.docs) {
                     const examData = examDoc.data();
@@ -1957,13 +1401,13 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 <td><span class="badge badge-warning">${incompleteCount}</span></td>
 <td><span class="badge badge-${progressColor}">${completionPercentage}% (${totalEvaluated}/${expectedCount})</span></td>
 <td> ${examData.status !== 'FINALIZED' ?
-                            `<button class="btn btn-primary btn-sm" onclick="showToast('Teacher evaluation in progress', "info")">Monitor</button>` :
+                            `<button class="btn btn-primary btn-sm" onclick="previewEvaluationSubmission('${examDoc.id}', true)">Monitor Progress</button>` :
                             '<small>Locked</small>'}
  </td>
 </tr> `;
                 }
 
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 progressDiv.innerHTML = html;
             } catch (error) {
                 progressDiv.innerHTML = '<p style="color: #ef4444;">Error loading progress</p>';
@@ -2007,6 +1451,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     division,
                     academicYear: year,
                     semester,
+                    department: window.currentUser.department || '',
                     createdBy: window.currentUser.uid,
                     createdAt: new Date().toISOString(),
                     isDeleted: false
@@ -2053,11 +1498,12 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     const row = tbody.insertRow();
                     row.innerHTML = `
+ <td><code style="font-size:10px;color:#6b7280;">${docSnap.id.substring(0,6)}...</code></td>
+ <td>${sanitizeString(data.name)}</td>
  <td>${data.code}</td>
-<td>${data.name}</td>
-<td>${data.class}</td>
-<td>${data.division}</td>
-<td><button class="btn btn-danger btn-sm" onclick="deleteSubject('${docSnap.id}')">Delete</button></td> `;
+ <td>${data.class}</td>
+ <td>${data.division}</td>
+ <td><button class="btn btn-danger btn-sm" onclick="deleteSubject('${docSnap.id}')">Delete</button></td> `;
 
                     const option = document.createElement('option');
                     option.value = docSnap.id;
@@ -2201,7 +1647,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             if (csvData.length > 0) {
                 html += '<table style="margin-top: 10px;"><thead><tr><th>Name</th><th>Enrollment</th><th>Class</th><th>Division</th></tr></thead><tbody>';
                 csvData.slice(0, 10).forEach(student => {
-                    html += `<tr><td>${student.name}</td><td>${student.enrollment}</td><td>${student.class}</td><td>${student.division}</td></tr>`;
+                    html += `<tr><td>${sanitizeString(student.name)}</td><td>${student.enrollment}</td><td>${student.class}</td><td>${student.division}</td></tr>`;
                 });
                 if (csvData.length > 10) {
                     html += `<tr><td colspan="4" style="text-align: center;">... and ${csvData.length - 10} more</td></tr>`;
@@ -2227,7 +1673,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             reader.onload = function (e) {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    if (typeof XLSX === "undefined") { showToast("Excel library not loaded", "danger"); return; } const workbook = XLSX.read(data, { type: 'array' });
                     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
                         showToast('Excel file has no sheets', 'danger');
                         return;
@@ -2255,13 +1701,13 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     const k = keys.find(k => variants.some(v => k.trim().toLowerCase() === v.toLowerCase()));
                     return k ? String(row[k]).trim() : '';
                 };
-                const name = get(['name', 'studentname', 'student name', 'full name', 'fullname']);
+                const name = sanitizeString(get(['name', 'studentname', 'student name', 'full name', 'fullname']), 100);
                 const enrollment = get(['enrollmentno', 'enrollment', 'enrollno', 'enrollment no', 'enrollment number', 'enrollmentnumber']);
                 const classVal = get(['class', 'classname', 'class name']);
                 const division = get(['division', 'div', 'section']);
 
-                if (!name || !enrollment || !classVal || !division) {
-                    errors.push(`Row ${idx + 2}: Missing required field(s) – Name, EnrollmentNo, Class, Division`);
+                if (!name || name === 'Invalid Name' || !enrollment || !classVal || !division) {
+                    errors.push(`Row ${idx + 2}: Missing required field(s) or invalid name - Name, EnrollmentNo, Class, Division`);
                     return;
                 }
                 csvData.push({ name, enrollment, class: classVal, division });
@@ -2280,7 +1726,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     html += `<tr><td>${s.name}</td><td>${s.enrollment}</td><td>${s.class}</td><td>${s.division}</td></tr>`;
                 });
                 if (csvData.length > 10) {
-                    html += `<tr><td colspan="4" style="text-align:center;">… and ${csvData.length - 10} more</td></tr>`;
+                    html += `<tr><td colspan="4" style="text-align:center;"> ... and ${csvData.length - 10} more</td></tr>`;
                 }
                 html += '</tbody></table>';
                 document.getElementById('importBtn').style.display = 'block';
@@ -2291,7 +1737,48 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         async function importStudentsExcel() {
-            return importStudentsCSV();
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Please select an Excel/CSV file first', 'warning');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            try {
+                window.showLoadingMessage('Parsing student data...');
+                await window.importFromExcel(file, async (data) => {
+                    csvData = data.map(item => {
+                        const keys = Object.keys(item);
+                        const get = (variants) => {
+                            const k = keys.find(k => variants.some(v => k.trim().toLowerCase() === v.toLowerCase()));
+                            return k ? String(item[k]).trim() : '';
+                        };
+                        return {
+                            enrollment: get(['enrollmentno', 'enrollment', 'enrollno', 'enrollment no', 'enrollment number', 'enrollmentnumber', 'prn', 'id']),
+                            name: get(['name', 'studentname', 'student name', 'full name', 'fullname', 'name of student']),
+                            class: get(['class', 'classname', 'class name', 'year']),
+                            division: get(['division', 'div', 'section']),
+                            rollNo: get(['roll', 'sr', 'no', 'rollno', 'roll no']),
+                            parentEmail: get(['parent', 'guardian', 'parent email']),
+                            studentEmail: get(['email', 'student email', 'personal email']),
+                            phone: get(['phone', 'mobile', 'contact', 'mobile no'])
+                        };
+                    }).filter(s => s.enrollment && s.name);
+                    
+                    if (csvData.length === 0) {
+                        showToast('No valid student records found. Check headers: "Enrollment" and "Name" are required.', 'danger');
+                        window.hideLoadingMessage();
+                        return;
+                    }
+                    
+                    await importStudentsCSV(); // Now that csvData is set
+                });
+            } catch (err) {
+                console.error('Import failed:', err);
+                showToast('Failed to read file: ' + err.message, 'danger');
+            } finally {
+                window.hideLoadingMessage();
+            }
         }
 
         async function exportStudentsExcel() {
@@ -2352,12 +1839,17 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                             enrollment: student.enrollment,
                             class: student.class,
                             division: student.division,
-                            academicYear: document.getElementById('academicYear').value,
-                            semester: document.getElementById('semester').value,
+                            rollNo: student.rollNo || '',
+                            email: student.studentEmail || student.parentEmail || '',
+                            parentEmail: student.parentEmail || '',
+                            phone: student.phone || '',
+                            academicYear: document.getElementById('academicYear')?.value || '',
+                            semester: document.getElementById('semester')?.value || '',
                             createdBy: window.currentUser.uid,
                             createdAt: new Date().toISOString(),
                             importedViaCSV: true,
-                            isActive: true
+                            isActive: true,
+                            department: window.currentUser.department || ''
                         });
 
                         successCount++;
@@ -2400,6 +1892,34 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         let allStudentsData = [];
 
+        function displayStudents(students) {
+            const tbody = document.getElementById('studentsList');
+            tbody.innerHTML = '';
+
+            students.forEach((data, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td style="color:#6b7280;font-size:12px;">${index + 1}</td>
+                    <td>${data.enrollment}</td>
+                    <td>${sanitizeString(data.name)}</td>
+                    <td>${data.class}</td>
+                    <td>${data.division}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${data.id}', \`${data.name.replace(/[`\\$]/g, '\\$&')}\`)">Delete</button>
+                    </td> `;
+            });
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No students found</td></tr>';
+            }
+        }
+
+        var _filterDebounce;
+        function filterStudents() {
+            clearTimeout(_filterDebounce);
+            _filterDebounce = setTimeout(_doFilterStudents, 180);
+        }
+
         async function loadStudentsList() {
             const tbody = document.getElementById('studentsList');
             const countDiv = document.getElementById('studentsCount');
@@ -2412,56 +1932,33 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     ? window.query(window.collection(window.db, 'students'),
                         window.where('academicYear', '==', year),
                         window.where('semester', '==', semester),
-                        window.orderBy('enrollment'), window.limit(500))
+                        window.limit(1000))
                     : window.query(window.collection(window.db, 'students'),
-                        window.orderBy('enrollment'), window.limit(500));
+                        window.limit(1000));
                 const snapshot = await window.getDocs(studentsQuery);
 
                 allStudentsData = [];
                 snapshot.forEach(docSnap => {
-                    allStudentsData.push(docSnap.data());
+                    const data = docSnap.data();
+                    data.id = docSnap.id; 
+                    allStudentsData.push(data);
                 });
+
+                // Sort in memory to avoid Firestore Indexing issues
+                allStudentsData.sort((a, b) => (a.enrollment || "").localeCompare(b.enrollment || ""));
 
                 displayStudents(allStudentsData);
 
                 if (countDiv) {
                     countDiv.textContent = `Total: ${allStudentsData.length} students`;
-                    if (snapshot.size === 200) {
-                        countDiv.textContent += ' (showing first 200)';
+                    if (snapshot.size === 500) {
+                        countDiv.textContent += ' (showing first 500)';
                     }
                 }
             } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+                console.error("Load Students Error:", error);
+                tbody.innerHTML = `<tr><td colspan="8" style="color:red;text-align:center;">Error loading students: ${error.message}</td></tr>`;
             }
-        }
-
-        function displayStudents(students) {
-            const tbody = document.getElementById('studentsList');
-            tbody.innerHTML = '';
-
-            students.forEach(data => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
- <td>${data.enrollment}</td>
-<td>${data.name}</td>
-<td>${data.class}</td>
-<td>${data.division}</td>
-<td><span class="badge badge-success">Active</span></td> `;
-            });
-
-            if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No students found</td></tr>';
-            }
-        }
-
-        var _filterDebounce;
-
-        function filterStudents() {
-
-            clearTimeout(_filterDebounce);
-
-            _filterDebounce = setTimeout(_doFilterStudents, 180);
-
         }
 
         function _doFilterStudents() {
@@ -2523,19 +2020,19 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 </div>
 
 <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:12px;margin-bottom:16px;">
-<strong>⚡ Quick Templates:</strong>
+<strong>Quick Templates:</strong>
 <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
 <button type="button" class="btn btn-sm btn-warning" onclick="applyStandardTemplate('theory')" style="font-size:12px;">
-📝 Theory (5 criteria)
+Theory (5 criteria)
 </button>
 <button type="button" class="btn btn-sm btn-info" onclick="applyStandardTemplate('practical')" style="font-size:12px;">
-🔬 Practical (4 criteria)
+Practical (4 criteria)
 </button>
 <button type="button" class="btn btn-sm btn-success" onclick="applyStandardTemplate('assignment')" style="font-size:12px;">
-📄 Assignment (3 criteria)
+Assignment (3 criteria)
 </button>
 <button type="button" class="btn btn-sm btn-primary" onclick="addMultipleCriteria(5)" style="font-size:12px;">
-➕ Add 5 Blank
+Add 5 Blank
 </button>
 </div>
 </div>
@@ -2546,7 +2043,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 <button type="button" class="btn btn-secondary btn-sm" onclick="addCriterion()">+ Add One Criterion</button>
 </div>
 <div class="btn-group">
-<button class="btn btn-primary" onclick="createStandardExam()">✅ Create Exam</button>
+<button class="btn btn-primary" onclick="createStandardExam()">Create Exam</button>
 <button class="btn btn-secondary" onclick="closeExamModal()">Cancel</button>
 </div> `;
                 loadSubjectsDropdown('examSubject');
@@ -2596,6 +2093,45 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
 
             modal.classList.add('active');
+            
+            // Add Preset Handler
+            window.applyProjectPreset = (p) => {
+                let name = "";
+                let cos = [];
+                let strips = 3;
+                let marks = 9;
+                
+                if(p === 'ca_unit1') { name = "Unit I Assessment (CO1-3)"; cos = [1,2,3]; strips = 3; }
+                else if(p === 'ca_unit2') { name = "Unit II Assessment (CO4-5)"; cos = [4,5]; strips = 3; }
+                else if(p === 'ese_full') { name = "End Semester Examination (CO1-5)"; cos = [1,2,3,4,5]; strips = 5; marks = 10; }
+                
+                document.getElementById('examName').value = name;
+                document.getElementById('examModalTitle').textContent = p.includes('ese') ? 'Create ESE Exam' : 'Create CA Exam';
+                
+                // Set Strip Metadata
+                modal.dataset.strips = strips;
+                modal.dataset.preset = p;
+
+                // Adjust COs in UI
+                buildCOStructure(); // Rebuild with default 5
+                
+                // Hide non-relevant COs and set marks
+                for(let i=1; i<=5; i++){
+                    const coItem = document.querySelector(`.co-item[data-co="${i}"]`);
+                    if(coItem) {
+                        if(cos.includes(i)) {
+                            coItem.style.display = 'block';
+                            const mInput = coItem.querySelector(`.co${i}-c1`);
+                            if(mInput) mInput.value = marks;
+                            const qInput = coItem.querySelector(`.co${i}-qcount`);
+                            if(qInput) qInput.value = 1;
+                        } else {
+                            coItem.style.display = 'none';
+                        }
+                    }
+                }
+                showToast(`${name} preset applied.`, "success");
+            };
         }
 
         function closeExamModal() {
@@ -2653,7 +2189,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 list.appendChild(div);
                 criterionCount++;
             }
-            showToast(`✅ Added ${count} criteria`, 'success', 1500);
+            showToast(`Added ${count} criteria`, 'success', 1500);
         }
 
         function applyStandardTemplate(type) {
@@ -2688,11 +2224,11 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 div.innerHTML = `
  <input type="text" placeholder="Criterion name" class="criterion-name" value="${c.name}">
 <input type="number" placeholder="Max marks" class="criterion-marks" value="${c.marks}" style="width: 150px;">
-<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button> `;
+<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Remove</button> `;
                 criteriaList.appendChild(div);
             });
 
-            showToast(`✅ Applied ${type.toUpperCase()} template with ${criteria.length} criteria`, 'success', 2000);
+            showToast(`Applied ${type.toUpperCase()} template with ${criteria.length} criteria`, 'success', 2000);
         }
 
         let lessonCounter = 0;
@@ -2710,34 +2246,34 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
  style="flex:1;padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;" 
  oninput="refreshLessonDropdowns()">
 <button type="button" onclick="removeLesson('${id}')" 
- style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;">✕ Remove</button>
+ style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;">Remove</button>
 </div>
 
 <div style="background:#f0f9ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px;margin-bottom:8px;">
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
 <button type="button" onclick="addBulkQuestions('${id}')" class="btn btn-sm btn-primary" style="font-size:12px;padding:4px 10px;">
-📝 Paste Multiple
+Paste Multiple
 </button>
 <button type="button" onclick="addMultipleQuestions('${id}', 5)" class="btn btn-sm btn-success" style="font-size:12px;padding:4px 10px;">
-➕ Add 5 Blank
+Add 5 Blank
 </button>
 <button type="button" onclick="addMultipleQuestions('${id}', 10)" class="btn btn-sm btn-info" style="font-size:12px;padding:4px 10px;">
-➕ Add 10 Blank
+Add 10 Blank
 </button>
 </div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;">
 <label style="cursor:pointer;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px;">
-📄 Import CSV
+Import CSV
  <input type="file" accept=".csv,.txt" style="display:none;" onchange="importQuestionsFromCSV(event,'${id}')">
 </label>
 <label style="cursor:pointer;background:#fdf4ff;color:#7c3aed;border:1px solid #e9d5ff;border-radius:6px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px;">
-📑 Import PDF
+Import PDF
  <input type="file" accept=".pdf" style="display:none;" onchange="importQuestionsFromPDF(event,'${id}')">
 </label>
 <a href="data:text/plain;charset=utf-8,What%20is%20an%20array%3F%0AExplain%20linked%20list%0AWhat%20is%20a%20stack%3F" 
  download="question_template.txt"
  style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;font-size:12px;text-decoration:none;">
-📥 Template
+Template
  </a>
 </div>
 </div>
@@ -2767,7 +2303,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             qDiv.innerHTML = `
  <input type="text" class="question-text" placeholder="Enter question text..." 
  style="flex:1;padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;">
-<button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">✕</button> `;
+<button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">Remove</button> `;
             ql.appendChild(qDiv);
 
             const newInput = qDiv.querySelector('.question-text');
@@ -2778,7 +2314,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             for (let i = 0; i < count; i++) {
                 addLessonQuestion(lessonId);
             }
-            showToast(`✅ Added ${count} question fields`, 'success', 1500);
+            showToast(`Added ${count} question fields`, 'success', 1500);
         }
 
         function addBulkQuestions(lessonId) {
@@ -2797,11 +2333,11 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 qDiv.innerHTML = `
  <input type="text" class="question-text" value="${line.trim()}" 
  style="flex:1;padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;">
-<button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">✕</button> `;
+<button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">Remove</button> `;
                 ql.appendChild(qDiv);
             });
 
-            showToast(`✅ Added ${lines.length} questions!`, 'success', 2000);
+            showToast(`Added ${lines.length} questions!`, 'success', 2000);
         }
 
         function getLessons() {
@@ -2851,53 +2387,84 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         async function importQuestionsFromPDF(event, lessonId) {
             const file = event.target.files[0];
             if (!file) return;
-            showToast('Reading PDF... please wait', 'info', 3000);
+            
+            showToast('Reading PDF... Ensure it is a text-based PDF (not scanned images). Format: One question per line.', 'info', 6000);
+            
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const uint8Array = new Uint8Array(arrayBuffer);
-                let text = '';
-                const decoder = new TextDecoder('utf-8', { fatal: false });
-                const rawText = decoder.decode(uint8Array);
-                const textMatches = rawText.match(/\(([^)]{5,200})\)/g) || [];
-                const seen = new Set();
-                textMatches.forEach(match => {
-                    const line = match.slice(1, -1).replace(/\\n/g, ' ').replace(/\\/g, '').trim();
-                    if (line.length > 8 && !seen.has(line) && /[a-zA-Z]/.test(line)) {
-                        seen.add(line);
-                        text += line + '\n';
-                    }
-                });
+                // Initialize pdf.js worker - force a more robust loading pattern
+                if (window.pdfjsLib) {
+                    const workerUrl = 'lib/pdf.worker.min.js';
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+                } else {
+                    throw new Error('PDF library (pdf.js) not found. Please refresh.');
+                }
 
-                if (!text.trim()) {
+                const arrayBuffer = await file.arrayBuffer();
+                if (!arrayBuffer || arrayBuffer.byteLength === 0) throw new Error('File is empty or unreadable');
+                
+                const uint8Array = new Uint8Array(arrayBuffer);
+                const pdf = await pdfjsLib.getDocument({ 
+                    data: uint8Array,
+                    verboseness: 0
+                }).promise;
+                let extractedQuestions = [];
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    
+                    // Group items by their vertical position (y-coordinate) to detect lines
+                    const linesMap = {};
+                    textContent.items.forEach(item => {
+                        const y = Math.round(item.transform[5]); // y-coordinate
+                        if (!linesMap[y]) linesMap[y] = [];
+                        linesMap[y].push(item);
+                    });
+
+                    // Sort lines by y-coordinate (descending) and join items in each line
+                    const sortedY = Object.keys(linesMap).sort((a, b) => b - a);
+                    sortedY.forEach(y => {
+                        const lineItems = linesMap[y].sort((a, b) => a.transform[4] - b.transform[4]); // Sort by x
+                        const lineText = lineItems.map(item => item.str).join(' ').trim();
+                        if (lineText.length > 5) {
+                            extractedQuestions.push(lineText);
+                        }
+                    });
+                }
+
+                if (extractedQuestions.length === 0) {
                     showToast('Could not extract text from PDF. Please use CSV or type questions manually.', 'warning', 6000);
                     event.target.value = '';
                     return;
                 }
 
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
                 const lessonEl = document.getElementById(lessonId);
                 if (!lessonEl) return;
                 const ql = lessonEl.querySelector('.question-list');
                 let added = 0;
-                lines.forEach(line => {
-                    const cleaned = line.replace(/^[\d\.\-\*\)]+\s*/, '').trim();
-                    if (cleaned.length > 5) {
+                
+                extractedQuestions.forEach(line => {
+                    // Clean up: remove question numbers like "1.", "Q1:", "*)", etc.
+                    const cleaned = line.replace(/^[\d\.\-\*\)Q]+\s*/i, '').trim();
+                    if (cleaned.length > 5 && !/^(page|date|subject|exam|time|marks)/i.test(cleaned)) {
                         const qDiv = document.createElement('div');
                         qDiv.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
                         qDiv.innerHTML = `
- <input type="text" class="question-text" value="${cleaned.replace(/"/g, '&quot;')}"
- style="flex:1;padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;">
-<button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">x</button> `;
+                            <input type="text" class="question-text" value="${cleaned.replace(/"/g, '&quot;')}"
+                            style="flex:1;padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;">
+                            <button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:bold;">x</button> `;
                         ql.appendChild(qDiv);
                         added++;
                     }
                 });
+
                 if (added > 0) {
-                    showToast(`Imported ${added} questions from PDF - please review and edit as needed`, 'success', 6000);
+                    showToast(`Imported ${added} questions from PDF!`, 'success', 6000);
                 } else {
-                    showToast('No readable text found in PDF. Try a text-based PDF or use CSV upload.', 'warning', 6000);
+                    showToast('No readable questions found in PDF. Try a text-based PDF or use CSV upload.', 'warning', 6000);
                 }
             } catch (e) {
+                console.error('PDF Extraction Error:', e);
                 showToast('Failed to read PDF: ' + e.message, 'danger');
             }
             event.target.value = '';
@@ -2926,75 +2493,72 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const templateDiv = document.createElement('div');
             templateDiv.style.cssText = 'background:#fef3c7;border:2px solid #fbbf24;border-radius:10px;padding:14px;margin-bottom:16px;';
             templateDiv.innerHTML = `
- <div style="font-weight:700;color:#92400e;margin-bottom:10px;font-size:14px;">⚡ Quick Fill All COs</div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
- <button onclick="fillAllCOMarks(5, 5, 5, 5)" class="btn btn-sm btn-warning" style="font-size:12px;">
- Equal: 5+5+5+5 = 20 each
- </button>
- <button onclick="fillAllCOMarks(10, 5, 3, 2)" class="btn btn-sm btn-info" style="font-size:12px;">
- Weighted: 10+5+3+2 = 20 each
- </button>
- <button onclick="fillAllCOMarks(8, 8, 4, 0)" class="btn btn-sm btn-success" style="font-size:12px;">
- Top Heavy: 8+8+4+0 = 20 each
- </button>
- </div>
- <div style="font-size:11px;color:#78350f;">Click to auto-fill all 5 COs with same marks pattern</div>
- `;
+                <div style="font-weight:700;color:#92400e;margin-bottom:10px;font-size:14px;">Quick Fill All COs</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                    <button onclick="fillAllCOMarks(5, 5, 5, 5)" class="btn btn-sm btn-warning" style="font-size:12px;">
+                        Equal: 5+5+5+5 = 20 each
+                    </button>
+                    <button onclick="fillAllCOMarks(10, 5, 3, 2)" class="btn btn-sm btn-info" style="font-size:12px;">
+                        Weighted: 10+5+3+2 = 20 each
+                    </button>
+                    <button onclick="fillAllCOMarks(8, 8, 4, 0)" class="btn btn-sm btn-success" style="font-size:12px;">
+                        Top Heavy: 8+8+4+0 = 20 each
+                    </button>
+                </div>
+                <div style="font-size:11px;color:#78350f;">Auto-fill all 5 COs with selected marks pattern</div>
+            `;
             coList.appendChild(templateDiv);
+
+            const isESE = document.getElementById('examModal').dataset.preset?.includes('ese');
+            const coMarks = isESE ? 10 : 9;
+            const stripCount = parseInt(document.getElementById('examModal').dataset.strips) || 3;
 
             for (let i = 1; i <= 5; i++) {
                 const coDiv = document.createElement('div');
                 coDiv.className = 'co-item';
-                coDiv.style.cssText = 'background:#f9fafb;border:2px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:16px;';
+                coDiv.dataset.co = i;
+                coDiv.style.cssText = 'background:#f9fafb;border:2px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+                
                 coDiv.innerHTML = `
- <div class="co-header" style="font-size:15px;font-weight:700;color:#1d4ed8;margin-bottom:12px;">CO${i} - Course Outcome ${i}
-</div>
-<div class="form-group" style="margin-bottom:10px;">
-<label style="font-size:13px;color:#374151;font-weight:600;">Outcome Statement</label>
-<textarea class="co${i}-desc" placeholder="e.g., Student will be able to analyse and apply data structure concepts..." 
- rows="2" style="width:100%;padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;"></textarea>
-</div>
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:10px;">
-<label style="font-size:13px;font-weight:600;color:#1e40af;display:block;margin-bottom:6px;">Random Question Assignment</label>
-<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-<div class="form-group" style="margin:0;flex:1;min-width:160px;">
-<label style="font-size:12px;">Source Lesson</label>
-<select class="co-lesson-select co${i}-lesson" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;">
-<option value="">select lesson</option>
-</select>
-</div>
-<div class="form-group" style="margin:0;width:140px;">
-<label style="font-size:12px;">Questions per Student</label>
-<input type="number" class="co${i}-qcount" value="1" min="1" max="20" 
- style="width:100%;padding:8px;border:2px solid#e5e7eb;border-radius:8px;font-size:13px;">
-</div>
-</div>
-<p style="font-size:11px;color:#6b7280;margin:6px 0 0;">Each student will randomly receive this many questions from the chosen lesson for CO${i}.</p>
-</div> ${[1, 2, 3, 4].map(j => `
- <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px;">
-<div style="font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;">C${j} - Criterion ${j}</div>
-<div class="form-group" style="margin:0;">
-<label style="font-size:12px;color:#6b7280;">Max Marks for C${j}</label>
-<input type="number" class="co${i}-c${j}" placeholder="Max marks" min="0" 
- style="width:130px;padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;">
-</div>
-</div> `).join('')}
- `;
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <span style="font-size:16px;font-weight:800;color:#1e40af;">CO${i} - Course Outcome ${i}</span>
+                        <span style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">Standard: ${coMarks}M</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-size:13px;color:#4b5563;font-weight:600;">Outcome Statement (CO Description)</label>
+                        <textarea class="co${i}-desc" placeholder="Enter what students will learn..." rows="2" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;resize:none;box-sizing:border-box;"></textarea>
+                    </div>
+                    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px;">
+                        <div style="display:flex;gap:15px;align-items:flex-end;">
+                            <div style="flex:2;">
+                                <label style="font-size:12px;font-weight:700;color:#0369a1;display:block;margin-bottom:4px;">Question Strip Source (Lesson)</label>
+                                <select class="co-lesson-select co${i}-lesson" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;">
+                                    <option value="">select lesson</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:12px;font-weight:700;color:#0369a1;display:block;margin-bottom:4px;">Marks (C1)</label>
+                                <input type="number" class="co${i}-c1" value="${coMarks}" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:700;text-align:center;">
+                                <input type="hidden" class="co${i}-qcount" value="1">
+                            </div>
+                        </div>
+                    </div>
+                `;
                 coList.appendChild(coDiv);
             }
             refreshLessonDropdowns();
         }
 
-        // SPEED: Fill all COs with same marks pattern
+        // SPEED: Fill all COs with same marks pattern (Safe version)
         function fillAllCOMarks(c1, c2, c3, c4) {
             for (let i = 1; i <= 5; i++) {
-                document.querySelector(`.co${i}-c1`).value = c1;
-                document.querySelector(`.co${i}-c2`).value = c2;
-                document.querySelector(`.co${i}-c3`).value = c3;
-                document.querySelector(`.co${i}-c4`).value = c4;
+                const el1 = document.querySelector(`.co${i}-c1`); if (el1) el1.value = c1;
+                const el2 = document.querySelector(`.co${i}-c2`); if (el2) el2.value = c2;
+                const el3 = document.querySelector(`.co${i}-c3`); if (el3) el3.value = c3;
+                const el4 = document.querySelector(`.co${i}-c4`); if (el4) el4.value = c4;
             }
-            const total = c1 + c2 + c3 + c4;
-            showToast(`✅ All 5 COs filled! Each CO = ${total} marks (Total: ${total * 5})`, 'success', 3000);
+            const total = (c1||0) + (c2||0) + (c3||0) + (c4||0);
+            showToast(`Preset Marks applied! Each CO = ${total}M`, 'success', 2000);
         }
 
         function switchCATab(tab) {
@@ -3030,6 +2594,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
 
             try {
+                window.showLoadingMessage('Creating standard exam...');
                 const duplicateCheck = await window.getDocs(window.query(window.collection(window.db, 'exams'),
                     window.where('name', '==', name),
                     window.where('subjectId', '==', subjectId),
@@ -3056,10 +2621,12 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     createdAt: new Date().toISOString()
                 });
 
+                window.hideLoadingMessage();
                 showToast('Standard exam created successfully!', "success");
                 closeExamModal();
                 loadExamsList();
             } catch (error) {
+                window.hideLoadingMessage();
                 showToast('Error: ' + error.message, 'danger');
             }
         }
@@ -3077,6 +2644,30 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             return shuffled.slice(0, Math.min(count, shuffled.length));
         }
 
+        function applyCATemplate(type) {
+            const nameInput = document.getElementById('teacherExamNameCA');
+            const coCountInput = document.getElementById('teacherCOCountCA');
+            const marksInput = document.getElementById('teacherCAMaxMarksCA');
+            const totalLabel = document.getElementById('caTotalLabel');
+
+            if (type === 'unit1') {
+                nameInput.value = 'Continuous Assessment - JUnit I';
+                coCountInput.value = 3; // CO1, CO2, CO3
+                marksInput.value = 4;
+            } else if (type === 'unit2') {
+                nameInput.value = 'Continuous Assessment - JUnit II';
+                coCountInput.value = 2; // CO4, CO5
+                marksInput.value = 4;
+            } else if (type === 'full') {
+                nameInput.value = 'Continuous Assessment - Full (CO1-5)';
+                coCountInput.value = 5;
+                marksInput.value = 4;
+            }
+            if (totalLabel) totalLabel.textContent = coCountInput.value * marksInput.value;
+            showToast(`Applied ${type.toUpperCase()} template`, 'success', 1500);
+        }
+        window.applyCATemplate = applyCATemplate;
+
         async function createCAExam() {
             if (!window.currentUser) { showToast('Session expired. Please log in again.', 'danger'); return; }
             const name = document.getElementById('examName').value.trim();
@@ -3093,14 +2684,28 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 showToast('Please add at least one lesson with questions', 'danger');
                 return;
             }
-            for (const l of lessons) {
-                if (!l.name) { showToast('Each lesson must have a name', 'danger'); return; }
-                if (l.questions.length === 0) { showToast(`Lesson "${l.name}" has no questions`, 'danger'); return; }
+
+            const isESE = document.getElementById('examModal').dataset.preset?.includes('ese');
+            const nameLower = name.toLowerCase();
+            let subsetCOs = [1, 2, 3, 4, 5];
+            
+            if (isESE) {
+                subsetCOs = [1, 2, 3, 4, 5];
+            } else if (nameLower.includes('junit i') || nameLower.includes('unit 1')) {
+                subsetCOs = [1, 2, 3];
+            } else if (nameLower.includes('junit ii') || nameLower.includes('unit 2')) {
+                subsetCOs = [4, 5];
             }
+
+            if (isESE && subsetCOs.length < 5) {
+                showToast('ESE exams must include all 5 Course Outcomes.', 'danger');
+                return;
+            }
+
             const courseOutcomes = [];
             let totalMarks = 0;
 
-            for (let i = 1; i <= 5; i++) {
+            subsetCOs.forEach(i => {
                 const coDesc = document.querySelector(`.co${i}-desc`)?.value?.trim() || '';
                 const lessonIdx = document.querySelector(`.co${i}-lesson`)?.value;
                 const qCount = parseInt(document.querySelector(`.co${i}-qcount`)?.value) || 1;
@@ -3115,18 +2720,21 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     criteria: []
                 };
                 let coTotal = 0;
-                for (let j = 1; j <= 4; j++) {
-                    const marks = parseInt(document.querySelector(`.co${i}-c${j}`)?.value) || 0;
-                    co.criteria.push({ name: `C${j}`, maxMarks: marks });
-                    coTotal += marks;
+                // Simplified for CA/ESE: normally 1 criterion, but flexible for more
+                for (let j = 1; j <= 5; j++) {
+                    const marksInput = document.querySelector(`.co${i}-c${j}`);
+                    if (marksInput) {
+                        const marks = parseInt(marksInput.value) || 0;
+                        co.criteria.push({ name: `C${j}`, maxMarks: marks });
+                        coTotal += marks;
+                    }
                 }
                 co.totalMarks = coTotal;
                 courseOutcomes.push(co);
                 totalMarks += coTotal;
-            }
+            });
 
             try {
-                // OPTIMIZATION: Show progress indicator
                 window.showLoadingMessage('Creating CA exam...');
 
                 const dupCheck = await window.getDocs(window.query(window.collection(window.db, 'exams'),
@@ -3143,10 +2751,11 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 const examRef = await window.addDoc(window.collection(window.db, 'exams'), {
                     name,
                     subjectId,
-                    examType: 'ca',
+                    examType: document.getElementById('examModal').dataset.preset?.includes('ese') ? 'ese' : 'ca',
                     courseOutcomes,
                     lessons,
                     totalMarks,
+                    questionsPerStrip: parseInt(document.getElementById('examModal').dataset.strips) || 3,
                     academicYear: year,
                     semester,
                     status: 'DRAFT',
@@ -3156,7 +2765,6 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 });
 
                 window.showLoadingMessage('Fetching students...');
-
                 const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', subjectId));
                 const subjectData = subjectDoc.exists() ? subjectDoc.data() : null;
 
@@ -3167,56 +2775,130 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     if (studentsSnap.size > 0) {
                         window.showLoadingMessage(`Assigning questions to ${studentsSnap.size} students...`);
-
-                        // OPTIMIZATION: Batch process in groups of 50 for better performance
-                        const BATCH_SIZE = 50;
                         const studentDocs = studentsSnap.docs;
-                        let processedCount = 0;
-
-                        for (let i = 0; i < studentDocs.length; i += BATCH_SIZE) {
-                            const batch = studentDocs.slice(i, i + BATCH_SIZE);
-                            const assignmentPromises = batch.map(studentDoc => {
-                                const studentAssignment = {};
-                                courseOutcomes.forEach((co, coIdx) => {
-                                    if (co.questionPool.length > 0) {
-                                        studentAssignment[`CO${coIdx + 1}`] = pickRandom(co.questionPool, co.questionsPerStudent);
-                                    } else {
-                                        studentAssignment[`CO${coIdx + 1}`] = [];
-                                    }
-                                });
-
-                                return window.setDoc(
-                                    window.doc(window.db, 'ca_question_assignments', `${examRef.id}_${studentDoc.id}`),
-                                    {
-                                        examId: examRef.id,
-                                        studentId: studentDoc.id,
-                                        studentName: studentDoc.data().name,
-                                        enrollment: studentDoc.data().enrollment,
-                                        assignments: studentAssignment,
-                                        assignedAt: new Date().toISOString()
-                                    }
-                                );
+                        const assignmentPromises = studentDocs.map(studentDoc => {
+                            const studentAssignment = {};
+                            courseOutcomes.forEach((co) => {
+                                if (co.questionPool && co.questionPool.length > 0) {
+                                    studentAssignment[co.name] = pickRandom(co.questionPool, co.questionsPerStudent);
+                                } else {
+                                    studentAssignment[co.name] = [];
+                                }
                             });
-
-                            await Promise.all(assignmentPromises);
-                            processedCount += batch.length;
-
-                            // Update progress
-                            window.showLoadingMessage(`Assigned questions: ${processedCount}/${studentDocs.length} students`);
-                        }
-
+                            return window.setDoc(window.doc(window.db, 'ca_question_assignments', `${examRef.id}_${studentDoc.id}`), {
+                                examId: examRef.id,
+                                studentId: studentDoc.id,
+                                studentName: studentDoc.data().name,
+                                enrollment: studentDoc.data().enrollment,
+                                assignments: studentAssignment,
+                                assignedAt: new Date().toISOString()
+                            });
+                        });
+                        await Promise.all(assignmentPromises);
                         window.hideLoadingMessage();
-                        showToast(`✅ CA Exam created! Questions assigned to ${studentsSnap.size} students in ${Math.ceil(studentsSnap.size / BATCH_SIZE)} batches.`, 'success', 5000);
+                        showToast(`CA Exam "${name}" created with ${courseOutcomes.length} COs! Questions assigned to ${studentsSnap.size} students.`, 'success', 5000);
                     } else {
                         window.hideLoadingMessage();
                         showToast('CA Exam created! (No students found to assign questions yet)', 'success');
                     }
-                } else {
+                }
+                closeExamModal();
+                loadExamsList();
+            } catch (error) {
+                window.hideLoadingMessage();
+                showToast('Error: ' + error.message, 'danger');
+            }
+        }
+
+        async function createExamUnified(type) {
+            if (!window.currentUser) { showToast('Session expired. Please log in again.', 'danger'); return; }
+            
+            let name, subjectId, coCount, maxMarks, year, semester;
+            
+            if (type === 'ca') {
+                name = document.getElementById('teacherExamNameCA')?.value.trim();
+                subjectId = document.getElementById('teacherExamSubjectCA')?.value;
+                coCount = parseInt(document.getElementById('teacherCOCountCA')?.value) || 5;
+                maxMarks = parseInt(document.getElementById('teacherCAMaxMarksCA')?.value) || 1;
+            } else if (type === 'ese') {
+                name = document.getElementById('teacherExamNameESE')?.value.trim();
+                subjectId = document.getElementById('teacherExamSubjectESE')?.value;
+                coCount = 5;
+                maxMarks = parseInt(document.getElementById('teacherESEMarksESE')?.value) || 1;
+            }
+            
+            year = document.getElementById('academicYear').value;
+            semester = document.getElementById('semester').value;
+
+            if (!name || !subjectId) { showToast('Please fill Exam Name and select Subject', 'warning'); return; }
+
+            try {
+                window.showLoadingMessage(`Initializing ${type.toUpperCase()} Exam creation...`);
+                
+                const lessons = getLessons();
+                if (lessons.length === 0) {
                     window.hideLoadingMessage();
-                    showToast('CA Exam created! (No students found to assign questions yet)', 'success');
+                    showToast('No lessons found. Please add lessons with questions first.', 'danger');
+                    return;
                 }
 
-                closeExamModal();
+                let subsetCOIndices = [1, 2, 3, 4, 5];
+                const nameLower = name.toLowerCase();
+                if (type === 'ca') {
+                    if (nameLower.includes('junit i') || nameLower.includes('unit 1')) subsetCOIndices = [1, 2, 3];
+                    else if (nameLower.includes('junit ii') || nameLower.includes('unit 2')) subsetCOIndices = [4, 5];
+                    else subsetCOIndices = Array.from({length: coCount}, (_, i) => i + 1);
+                }
+
+                const courseOutcomes = [];
+                let totalMarks = 0;
+
+                subsetCOIndices.forEach(i => {
+                    const co = {
+                        name: `CO${i}`,
+                        description: `Course Outcome ${i}`,
+                        totalMarks: maxMarks,
+                        questionsPerStudent: 1,
+                        criteria: [ { name: `Criterion 1`, maxMarks: maxMarks } ],
+                        lessonName: lessons[Math.min(i-1, lessons.length-1)]?.name || 'General',
+                        questionPool: lessons[Math.min(i-1, lessons.length-1)]?.questions || []
+                    };
+                    courseOutcomes.push(co);
+                    totalMarks += maxMarks;
+                });
+
+                const examRef = await window.addDoc(window.collection(window.db, 'exams'), {
+                    name, subjectId, examType: type,
+                    courseOutcomes, totalMarks, academicYear: year, semester,
+                    status: 'DRAFT', lifecycleState: 'DRAFT',
+                    createdBy: window.currentUser.uid, createdAt: new Date().toISOString()
+                });
+
+                window.showLoadingMessage('Assigning question strips to students...');
+                const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', subjectId));
+                const subjectData = subjectDoc.data();
+
+                const studentsSnap = await window.getDocs(window.query(
+                    window.collection(window.db, 'students'),
+                    window.where('class', '==', subjectData.class),
+                    window.where('division', '==', subjectData.division)
+                ));
+
+                const promises = studentsSnap.docs.map(studentDoc => {
+                    const studentAssignment = {};
+                    courseOutcomes.forEach(co => {
+                        studentAssignment[co.name] = pickRandom(co.questionPool, 1);
+                    });
+                    return window.setDoc(window.doc(window.db, 'ca_question_assignments', `${examRef.id}_${studentDoc.id}`), {
+                        examId: examRef.id, studentId: studentDoc.id,
+                        studentName: studentDoc.data().name, enrollment: studentDoc.data().enrollment,
+                        assignments: studentAssignment, assignedAt: new Date().toISOString()
+                    });
+                });
+
+                await Promise.all(promises);
+                window.hideLoadingMessage();
+                showToast(`${type.toUpperCase()} Exam "${name}" created successfully!`, 'success');
                 loadExamsList();
             } catch (error) {
                 window.hideLoadingMessage();
@@ -3281,11 +2963,21 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             try {
                 const year = document.getElementById('academicYear').value;
                 const semester = document.getElementById('semester').value;
-                const snapshot = await window.getDocs(window.query(window.collection(window.db, 'exams'),
-                    window.where('academicYear', '==', year),
-                    window.where('semester', '==', semester),
-                    window.orderBy('createdAt', 'desc'),
-                    window.limit(50)));
+                let snapshot;
+                try {
+                    snapshot = await window.getDocs(window.query(window.collection(window.db, 'exams'),
+                        window.where('academicYear', '==', year),
+                        window.where('semester', '==', semester),
+                        window.orderBy('createdAt', 'desc'),
+                        window.limit(50)));
+                } catch (idxErr) {
+                    // Fallback if index is missing: Fetch without orderBy
+                    console.warn("Index missing, falling back to unsorted fetch:", idxErr);
+                    snapshot = await window.getDocs(window.query(window.collection(window.db, 'exams'),
+                        window.where('academicYear', '==', year),
+                        window.where('semester', '==', semester),
+                        window.limit(50)));
+                }
                 tbody.innerHTML = '';
 
                 for (const docSnap of snapshot.docs) {
@@ -3301,7 +2993,9 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 <td>${data.totalMarks}</td>
 <td><span class="badge badge-${data.status === 'FINALIZED' ? 'danger' : 'success'}">${data.status}</span></td>
 <td style="display:flex;gap:4px;flex-wrap:wrap;">
-<button class="btn btn-primary btn-sm" onclick="viewExamDetails('${docSnap.id}')">View</button> ${data.examType === 'ca' ? `<button class="btn btn-secondary btn-sm" onclick="reassignCAQuestions('${docSnap.id}')" title="Re-run random question assignment for all students">Reassign</button>` : ''}
+<button class="btn btn-primary btn-sm" onclick="viewExamDetails('${docSnap.id}')">View</button> 
+${data.status === 'DRAFT' ? `<button class="btn btn-success btn-sm" onclick="publishExam('${docSnap.id}')">Publish</button>` : ''}
+${data.examType === 'ca' ? `<button class="btn btn-secondary btn-sm" onclick="reassignCAQuestions('${docSnap.id}')" title="Re-run random question assignment for all students">Reassign</button>` : ''}
  </td> `;
 
                     if (resultsSelect) {
@@ -3329,6 +3023,27 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
         }
 
+        async function publishExam(examId) {
+            if (!confirm('Are you sure you want to publish this exam? This will make it active.')) return;
+            try {
+                await window.updateDoc(window.doc(window.db, 'exams', examId), {
+                    status: 'ACTIVE',
+                    publishedAt: new Date().toISOString()
+                });
+                await window.addDoc(window.collection(window.db, 'audit_logs'), {
+                    action: 'PUBLISH_EXAM',
+                    examId,
+                    performedBy: window.currentUser.uid,
+                    timestamp: new Date().toISOString()
+                });
+                showToast('Exam published successfully!', 'success');
+                loadExamsList();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'danger');
+            }
+        }
+        window.publishExam = publishExam;
+
         async function viewExamDetails(examId) {
             try {
                 const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
@@ -3341,7 +3056,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 let html = `
  <div style="max-height:80vh;overflow-y:auto;">
 <div style="background:#1d4ed8;color:#fff;border-radius:10px;padding:16px;margin-bottom:16px;">
-<h3 style="margin:0 0 6px;">${exam.name}</h3>
+<h3 style="margin:0 0 6px;">${sanitizeString(exam.name)}</h3>
 <div style="font-size:13px;opacity:0.85;">${subject.code || ''} - ${subject.name || 'N/A'} | ${exam.academicYear} Sem ${exam.semester}</div>
 <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
 <span style="background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:12px;font-size:12px;">${exam.examType?.toUpperCase()}</span>
@@ -3665,7 +3380,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
          */
         async function loadTeacherQuestionsTab() {
             const subjectSelect = document.getElementById('teacherQuestionsSubject');
-            if (!subjectSelect) return;
+            if (!subjectSelect || !window.currentUser) return;
 
             subjectSelect.innerHTML = '<option value="">Choose Subject</option>';
 
@@ -3691,6 +3406,63 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         window.loadTeacherQuestionsTab = loadTeacherQuestionsTab;
+
+        async function loadTeacherQuestionsForSubject() {
+            const subjectId = document.getElementById('teacherQuestionsSubject')?.value;
+            const container = document.getElementById('teacherQuestionsList');
+            if (!container) return;
+
+            if (!subjectId) {
+                container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Select a subject to view assigned questions</p>';
+                return;
+            }
+
+            container.innerHTML = '<p style="text-align:center;padding:20px;">Fetching assigned questions...</p>';
+
+            try {
+                // Fetch assignments for this specific teacher and subject
+                const assignmentsSnap = await window.getDocs(window.query(
+                    window.collection(window.db, 'teacher_question_assignments'),
+                    window.where('teacherEmail', '==', window.currentUser.email),
+                    window.where('subjectId', '==', subjectId),
+                    window.orderBy('assignedAt', 'desc'),
+                    window.limit(5)
+                ));
+
+                if (assignmentsSnap.empty) {
+                    container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No specific question sets assigned to you yet for this subject.</p>';
+                    return;
+                }
+
+                let html = '';
+                assignmentsSnap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const date = data.assignedAt ? new Date(data.assignedAt).toLocaleString() : 'N/A';
+                    
+                    html += `
+                        <div class="card" style="margin-bottom:15px; border-left: 4px solid #2563eb;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <h4 style="margin:0;">Assigned Set: ${date}</h4>
+                                <span class="badge badge-info">ID: ${docSnap.id.substring(0,8)}</span>
+                            </div>
+                            <div style="background:#f8fafc; border-radius:8px; padding:10px;">
+                                ${data.questions.map((q, idx) => `
+                                    <div style="padding:8px; border-bottom: 1px solid #e2e8f0; font-size:14px;">
+                                        <strong>Q${idx + 1}.</strong> ${q.question} 
+                                        <span style="font-size:11px; color:#64748b; margin-left:10px;">(Unit: ${q.unit}, Marks: ${q.marks})</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading teacher questions:', error);
+                container.innerHTML = `<p style="color:#dc2626;text-align:center;">Error: ${error.message}</p>`;
+            }
+        }
+        window.loadTeacherQuestionsForSubject = loadTeacherQuestionsForSubject;
 
         async function loadTeacherExamsTab() {
             const subjectSelect = document.getElementById('teacherExamSubject');
@@ -3719,7 +3491,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     opt1.setAttribute('data-division', data.division);
                     opt1.setAttribute('data-year', subjectData.academicYear || '');
                     opt1.setAttribute('data-sem', subjectData.semester || '');
-                    subjectSelect.appendChild(opt1);
+                        subjectSelect.appendChild(opt1);
 
                     const opt2 = opt1.cloneNode(true);
                     filterSelect.appendChild(opt2);
@@ -3734,15 +3506,169 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const type = document.getElementById('teacherExamType').value;
             const standardFields = document.getElementById('teacherStandardExamFields');
             const caFields = document.getElementById('teacherCAExamFields');
+            const eseFields = document.getElementById('teacherESEExamFields');
 
             if (type === 'ca') {
                 standardFields.style.display = 'none';
                 caFields.style.display = 'block';
+                if (eseFields) eseFields.style.display = 'none';
+            } else if (type === 'ese') {
+                standardFields.style.display = 'none';
+                caFields.style.display = 'none';
+                if (eseFields) eseFields.style.display = 'block';
             } else {
                 standardFields.style.display = 'block';
                 caFields.style.display = 'none';
+                if (eseFields) eseFields.style.display = 'none';
             }
         }
+
+        window.applyCATemplate = function(template) {
+            const nameInput = document.getElementById('teacherExamNameCA');
+            const coInput = document.getElementById('teacherCOCountCA');
+            const marksInput = document.getElementById('teacherCAMaxMarksCA');
+            const totalLabel = document.getElementById('caTotalLabel');
+            
+            if (template === 'unit1') {
+                nameInput.value = 'Continuous Assessment - JUnit I';
+                coInput.value = 3;
+                marksInput.value = 4;
+            } else if (template === 'unit2') {
+                nameInput.value = 'Continuous Assessment - JUnit II';
+                coInput.value = 2;
+                marksInput.value = 4;
+            } else if (template === 'full') {
+                nameInput.value = 'Continuous Assessment - (JUnit I & II)';
+                coInput.value = 5;
+                marksInput.value = 4;
+            }
+            if (totalLabel) totalLabel.textContent = coInput.value * marksInput.value;
+            showToast('Template Applied', 'success');
+        };
+
+        window.createExamUnified = async function(type) {
+            if (!window.currentUser) { showToast('Session expired. Please log in again.', 'danger'); return; }
+            
+            let subjectId, examName, examData;
+            
+            if (type === 'ca') {
+                subjectId = document.getElementById('teacherExamSubjectCA').value;
+                examName = document.getElementById('teacherExamNameCA').value.trim();
+                const coCount = parseInt(document.getElementById('teacherCOCountCA').value);
+                const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarksCA').value);
+                
+                if (!subjectId || !examName) { showToast('Please fill all CA fields', "warning"); return; }
+                
+                const nameLower = examName.toLowerCase();
+                let startCO = 1;
+                if (nameLower.includes('junit ii') || nameLower.includes('unit 2')) startCO = 4;
+
+                const courseOutcomes = [];
+                let actualTotalMarks = 0;
+                for (let i = 0; i < coCount; i++) {
+                    const currentCONum = startCO + i;
+                    courseOutcomes.push({
+                        name: `CO${currentCONum}`,
+                        criteria: [{ name: `Assignment 1`, maxMarks: maxMarks }]
+                    });
+                    actualTotalMarks += maxMarks;
+                }
+
+                examData = {
+                    name: examName,
+                    subjectId: subjectId,
+                    examType: 'ca',
+                    courseOutcomes,
+                    totalMarks: actualTotalMarks,
+                    coCount,
+                    status: 'DRAFT',
+                    lifecycleState: 'DRAFT',
+                    createdAt: new Date().toISOString(),
+                    createdBy: window.currentUser.uid
+                };
+            } else if (type === 'ese') {
+                subjectId = document.getElementById('teacherExamSubjectESE').value;
+                examName = document.getElementById('teacherExamNameESE').value.trim();
+                const marksPerQ = parseFloat(document.getElementById('teacherESEMarksESE').value);
+                
+                if (!subjectId || !examName) { showToast('Please fill all ESE fields', "warning"); return; }
+                
+                const courseOutcomes = [];
+                for (let co = 1; co <= 5; co++) {
+                    courseOutcomes.push({
+                        name: `CO${co}`,
+                        criteria: [{ name: `Question ${co}`, maxMarks: marksPerQ }]
+                    });
+                }
+
+                examData = {
+                    name: examName,
+                    subjectId: subjectId,
+                    examType: 'ese',
+                    courseOutcomes,
+                    totalMarks: 5 * marksPerQ,
+                    coCount: 5,
+                    status: 'DRAFT',
+                    lifecycleState: 'DRAFT',
+                    createdAt: new Date().toISOString(),
+                    createdBy: window.currentUser.uid
+                };
+            }
+
+            try {
+                window.showLoadingMessage('Saving exam...');
+                const subjectSelect = document.getElementById(type === 'ca' ? 'teacherExamSubjectCA' : 'teacherExamSubjectESE');
+                const selectedOption = subjectSelect.selectedOptions[0];
+                examData.academicYear = selectedOption.getAttribute('data-year') || '';
+                examData.semester = selectedOption.getAttribute('data-sem') || '';
+                
+                await window.addDoc(window.collection(window.db, 'exams'), examData);
+                window.hideLoadingMessage();
+                showToast('Exam created successfully', 'success');
+                loadTeacherExamsList();
+            } catch (error) {
+                window.hideLoadingMessage();
+                showToast('Error: ' + error.message, 'danger');
+            }
+        };
+
+        window.applyExamTemplate = function(template) {
+            const typeSelect = document.getElementById('teacherExamType');
+            const nameInput = document.getElementById('teacherExamName');
+            
+            if (template.startsWith('ca_')) {
+                typeSelect.value = 'ca';
+                toggleTeacherExamType();
+                const coInput = document.getElementById('teacherCOCount');
+                const caInput = document.getElementById('teacherCACount');
+                const marksInput = document.getElementById('teacherCAMaxMarks');
+                
+                if (template === 'ca_unit1') {
+                    nameInput.value = 'Continuous Assessment - JUnit I';
+                    coInput.value = 3;
+                    marksInput.value = 4;
+                    window.showToast('Applied JUnit I Template: CO1-3 @ 4m each', 'info');
+                } else if (template === 'ca_unit2') {
+                    nameInput.value = 'Continuous Assessment - JUnit II';
+                    coInput.value = 2;
+                    marksInput.value = 4;
+                    window.showToast('Applied JUnit II Template: CO4-5 @ 4m each', 'info');
+                } else if (template === 'ca_full') {
+                    nameInput.value = 'Continuous Assessment - (JUnit I & II)';
+                    coInput.value = 5;
+                    marksInput.value = 4;
+                    window.showToast('Applied Full CA Template: CO1-5 @ 4m each', 'info');
+                }
+            } else if (template === 'ese_standard') {
+                typeSelect.value = 'ese';
+                toggleTeacherExamType();
+                nameInput.value = 'End Semester Exam (ESE)';
+                const marksInput = document.getElementById('teacherESEMarks');
+                marksInput.value = 5;
+                document.getElementById('eseTotalLabel').textContent = 25;
+                window.showToast('Applied ESE Template: 5 Questions @ 5m each', 'success');
+            }
+        };
 
         function generateTeacherCriteriaFields() {
             const count = parseInt(document.getElementById('teacherCriteriaCount')?.value || 5);
@@ -3809,24 +3735,47 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     examData.criteria = criteria;
                     examData.totalMarks = totalMarks;
-                } else {
+                } else if (examType === 'ca') {
                     const coCount = parseInt(document.getElementById('teacherCOCount').value);
-                    const caCount = parseInt(document.getElementById('teacherCACount').value);
                     const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarks').value);
-
+                    const nameLower = examName.toLowerCase();
+                    
                     const courseOutcomes = [];
-                    for (let co = 1; co <= coCount; co++) {
-                        const criteria = [];
-                        for (let ca = 1; ca <= caCount; ca++) {
-                            criteria.push({ name: `CA${ca}`, maxMarks: maxMarks });
-                        }
-                        courseOutcomes.push({ name: `CO${co}`, criteria });
+                    let actualTotalMarks = 0;
+                    
+                    // Logic based on diagram: JUnit I (CO1-3) or JUnit II (CO4-5) or Full
+                    let startCO = 1;
+                    if (nameLower.includes('junit ii') || nameLower.includes('unit 2')) {
+                        startCO = 4;
+                    }
+
+                    for (let i = 0; i < coCount; i++) {
+                        const currentCONum = startCO + i;
+                        const coName = `CO${currentCONum}`;
+                        courseOutcomes.push({
+                            name: coName,
+                            criteria: [{ name: `Assignment 1`, maxMarks: maxMarks }]
+                        });
+                        actualTotalMarks += maxMarks;
                     }
 
                     examData.courseOutcomes = courseOutcomes;
-                    examData.totalMarks = coCount * caCount * maxMarks;
-                    examData.caCount = caCount;
-                    examData.coCount = coCount;
+                    examData.totalMarks = actualTotalMarks;
+                } else if (examType === 'ese') {
+                    const marksPerQ = parseFloat(document.getElementById('teacherESEMarks').value);
+                    const courseOutcomes = [];
+                    let actualTotalMarks = 0;
+                    
+                    // ESE always has 5 questions (CO1-CO5) as per diagram
+                    for (let co = 1; co <= 5; co++) {
+                        courseOutcomes.push({
+                            name: `CO${co}`,
+                            criteria: [{ name: `Question ${co}`, maxMarks: marksPerQ }]
+                        });
+                        actualTotalMarks += marksPerQ;
+                    }
+                    examData.courseOutcomes = courseOutcomes;
+                    examData.totalMarks = actualTotalMarks;
                 }
 
                 await window.addDoc(window.collection(window.db, 'exams'), examData);
@@ -3878,7 +3827,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     return;
                 }
 
-                let html = '<table><thead><tr><th>Exam Name</th><th>Subject</th><th>Type</th><th>Structure</th><th>Total Marks</th><th>Status</th><th>Created</th></tr></thead><tbody>';
+                let html = '<div class="table-container"><table><thead><tr><th>Exam Name</th><th>Subject</th><th>Type</th><th>Structure</th><th>Total Marks</th><th>Status</th><th>Created</th></tr></thead><tbody>';
 
                 for (const examDoc of examsSnap.docs) {
                     const exam = examDoc.data();
@@ -3907,7 +3856,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 </tr> `;
                 }
 
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 container.innerHTML = html;
 
             } catch (error) {
@@ -3977,14 +3926,14 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 <td>${srNo}</td>
 <td>${student.rollNo || '-'}</td>
 <td>${student.enrollment}</td>
-<td>${student.name}</td>
+<td>${sanitizeString(student.name)}</td>
 <td>${student.email || '-'}</td>
 <td>${student.phone || '-'}</td>
 </tr>`;
                     srNo++;
                 });
 
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 container.innerHTML = html;
             } catch (error) {
                 container.innerHTML = '<p style="color: red;">Error loading students: ' + error.message + '</p>';
@@ -4019,7 +3968,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 html += `
  <tr>
 <td>${result.enrollment}</td>
-<td>${result.studentName}</td>
+<td>${sanitizeString(result.studentName)}</td>
 <td>${result.totalMarks != null ? Number(result.totalMarks).toFixed(2) : 'N/A'} / ${examData.totalMarks || 'N/A'}</td>
 <td>${(result.percentage != null ? Number(result.percentage).toFixed(2) : '0.00')}%</td>
 <td><span class="badge badge-info">${result.grade}</span></td>
@@ -4087,7 +4036,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
 
             if (!fileInput.files[0]) {
-                showToast('Please select a CSV file', "warning");
+                showToast('Please select a file (Excel or CSV)', "warning");
                 return;
             }
 
@@ -4095,39 +4044,38 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const subjectId = parts[0] || '';
             const className = parts[1] || '';
             const division = parts[2] || '';
-            if (!className || !division) {
-                showToast('Invalid class selection. Please re-select.', 'danger');
-                return;
-            }
+            
             const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = async function (e) {
-                try {
-                    const csv = e.target.result;
-                    const lines = csv.split('\n');
-
+            
+            try {
+                window.showLoadingMessage('Importing students...');
+                await window.importFromExcel(file, async (data) => {
                     let successCount = 0;
                     let skipCount = 0;
-                    for (let i = 2; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
+                    
+                    for (const row of data) {
+                        // Flexible header mapping
+                        const getVal = (patterns) => {
+                            const key = Object.keys(row).find(k => 
+                                patterns.some(p => k.toLowerCase().trim().includes(p.toLowerCase()))
+                            );
+                            return key ? String(row[key]).trim() : '';
+                        };
 
-                        const cols = line.split(',');
-                        if (cols.length < 4) continue;
-
-                        const rollNo = cols[1]?.trim();
-                        const enrollment = cols[2]?.trim();
-                        const name = cols[3]?.trim();
-                        const parentEmail = cols[4]?.trim();
-                        const studentEmail = cols[6]?.trim();
-                        const phone = cols[8]?.trim();
-                        const batch = cols[10]?.trim();
+                        const rollNo = getVal(['roll', 'sr', 'no']);
+                        const enrollment = getVal(['enrollment', 'prn', 'id', 'urn']);
+                        const name = getVal(['name', 'student', 'full']);
+                        const parentEmail = getVal(['parent', 'guardian']);
+                        const studentEmail = getVal(['email', 'student email', 'personal email']);
+                        const phone = getVal(['phone', 'mobile', 'contact']);
+                        const batch = getVal(['batch', 'group']);
 
                         if (!enrollment || !name) {
                             skipCount++;
                             continue;
                         }
+
+                        // Check for duplicate enrollment in this class/division
                         const existingSnap = await window.getDocs(window.query(
                             window.collection(window.db, 'students'),
                             window.where('enrollment', '==', enrollment)
@@ -4137,6 +4085,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                             skipCount++;
                             continue;
                         }
+
                         await window.addDoc(window.collection(window.db, 'students'), {
                             rollNo: rollNo || '',
                             enrollment: enrollment,
@@ -4154,15 +4103,16 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         successCount++;
                     }
 
-                    showToast(`Import Complete!\n\nAdded: ${successCount} students\nSkipped: ${skipCount} (duplicates or invalid)`, "success");
+                    window.hideLoadingMessage();
+                    showToast(`Import Complete! Added: ${successCount}, Skipped: ${skipCount} (duplicates/invalid)`, "success");
                     fileInput.value = '';
-
-                } catch (error) {
-                    showToast('Error importing: ' + error.message, 'danger');
-                }
-            };
-
-            reader.readAsText(file);
+                    if (typeof loadTeacherStudents === 'function') loadTeacherStudents();
+                });
+            } catch (error) {
+                window.hideLoadingMessage();
+                console.error('Import Error:', error);
+                showToast('Import failed: ' + error.message, 'danger');
+            }
         }
 
         async function loadTeacherData() {
@@ -4231,9 +4181,15 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 const evalSubjectSelect = document.getElementById('teacherSubjectSelect');
                 if (evalSubjectSelect) evalSubjectSelect.innerHTML = '<option value="">Choose Subject</option>';
                 const createExamSubjectSelect = document.getElementById('teacherExamSubject');
+                const caSubjectSelect = document.getElementById('teacherExamSubjectCA');
+                const eseSubjectSelect = document.getElementById('teacherExamSubjectESE');
                 const createExamFilterSelect = document.getElementById('teacherExamsFilter');
+                
                 if (createExamSubjectSelect) createExamSubjectSelect.innerHTML = '<option value="">Choose Subject</option>';
+                if (caSubjectSelect) caSubjectSelect.innerHTML = '<option value="">Choose Subject</option>';
+                if (eseSubjectSelect) eseSubjectSelect.innerHTML = '<option value="">Choose Subject</option>';
                 if (createExamFilterSelect) createExamFilterSelect.innerHTML = '<option value="">All Subjects</option>';
+                
                 if (subjectSelect) {
                     subjectsMap.forEach((subjectInfo, subjectId) => {
                         const option = document.createElement('option');
@@ -4243,10 +4199,14 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         option.setAttribute('data-division', subjectInfo.division);
                         option.setAttribute('data-year', subjectInfo.academicYear || '');
                         option.setAttribute('data-sem', subjectInfo.semester || '');
-                        subjectSelect.appendChild(option);
+                        
+                        if (subjectSelect) subjectSelect.appendChild(option.cloneNode(true));
                         if (evalSubjectSelect) evalSubjectSelect.appendChild(option.cloneNode(true));
                         if (studentSubjectSelect) studentSubjectSelect.appendChild(option.cloneNode(true));
                         if (createExamSubjectSelect) createExamSubjectSelect.appendChild(option.cloneNode(true));
+                        if (caSubjectSelect) caSubjectSelect.appendChild(option.cloneNode(true));
+                        if (eseSubjectSelect) eseSubjectSelect.appendChild(option.cloneNode(true));
+                        
                         if (createExamFilterSelect) {
                             const filterOpt = option.cloneNode(true);
                             createExamFilterSelect.appendChild(filterOpt);
@@ -4285,6 +4245,32 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                             }
                         }
                     });
+                }
+
+                // Load Question Assignments
+                const qList = document.getElementById('teacherQuestionAssignmentsList');
+                if (qList) {
+                    const qSnap = await window.getDocs(window.query(
+                        window.collection(window.db, 'teacher_question_assignments'),
+                        window.where('teacherEmail', '==', window.currentUser.email)
+                    ));
+                    qList.innerHTML = '';
+                    if (qSnap.empty) {
+                        qList.innerHTML = '<tr><td colspan="6" style="text-align:center;">No question sets assigned yet.</td></tr>';
+                    } else {
+                        qSnap.forEach(d => {
+                            const qa = d.data();
+                            const row = qList.insertRow();
+                            row.innerHTML = `
+                                <td><strong>${qa.subjectId}</strong></td>
+                                <td>${qa.assignmentDate}</td>
+                                <td>${qa.units} Units</td>
+                                <td>${qa.totalQuestions} Questions</td>
+                                <td><span class="badge badge-success">Assigned</span></td>
+                                <td><button class="btn btn-info btn-sm" onclick="viewQuestionAssignment('${d.id}')">View Questions</button></td>
+                            `;
+                        });
+                    }
                 }
             } catch (error) {
                 tbody.innerHTML = '<tr><td colspan="4">Error loading data: ' + error.message + '</td></tr>';
@@ -4359,19 +4345,20 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
         function toggleStudent(studentId) {
             const content = document.getElementById(studentId);
+            if (!content) return;
             const arrow = document.getElementById('arrow-' + studentId);
 
             if (content.style.display === 'none') {
                 content.style.display = 'block';
-                arrow.style.transform = 'rotate(90deg)';
+                if (arrow) arrow.style.transform = 'rotate(90deg)';
             } else {
                 content.style.display = 'none';
-                arrow.style.transform = 'rotate(0deg)';
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
             }
         }
 
         // -- EVAL CACHE: exam doc cached so save doesn't re-fetch each time --
-        let _evalExamCache = {};
+        _evalExamCache = {};
 
         function markAsModified(studentId) {
             const statusBadge = document.getElementById('status-student-' + studentId);
@@ -4382,9 +4369,24 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         function toggleAbsent(studentId, examId, examType) {
+            const exData = _evalExamCache[examId];
+            if (exData && (exData.status === 'FINALIZED' || exData.teacherFinalized)) {
+                showToast('This evaluation is finalized and locked.', 'warning');
+                return;
+            }
             const card = document.getElementById('student-' + studentId);
             const btn = document.getElementById('absent-btn-' + studentId);
             const badge = document.getElementById('status-student-' + studentId);
+
+            if (!btn) {
+                console.warn('Absent button not found for student:', studentId);
+                return;
+            }
+            if (!badge) {
+                console.warn('Status badge not found for student:', studentId);
+                // We create a dummy or just ignore
+            }
+
             const isAbsent = btn.dataset.absent === '1';
             if (isAbsent) {
                 btn.dataset.absent = '0';
@@ -4392,14 +4394,14 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 btn.className = 'btn btn-warning btn-sm';
                 if (card) card.style.opacity = '1';
                 if (badge) { badge.className = 'badge badge-warning'; badge.textContent = 'Modified'; }
-                card.querySelectorAll('input').forEach(i => i.disabled = false);
+                if (card) card.querySelectorAll('input').forEach(i => i.disabled = false);
             } else {
                 btn.dataset.absent = '1';
                 btn.textContent = 'Absent';
                 btn.className = 'btn btn-danger btn-sm';
                 if (card) card.style.opacity = '0.45';
                 if (badge) { badge.className = 'badge badge-secondary'; badge.textContent = 'Absent'; }
-                card.querySelectorAll('input').forEach(i => { i.disabled = true; i.value = ''; });
+                if (card) card.querySelectorAll('input').forEach(i => { i.disabled = true; i.value = ''; });
                 saveStudentEvaluation(studentId, examId, examType);
             }
         }
@@ -4407,14 +4409,20 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         async function saveStudentEvaluation(studentId, examId, examType) {
             try {
                 const statusBadge = document.getElementById('status-student-' + studentId);
-                if (statusBadge) { statusBadge.className = 'badge badge-info'; statusBadge.textContent = 'Saving...'; }
-
+                
                 let examData = _evalExamCache[examId];
                 if (!examData) {
                     const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
                     examData = examDoc.data();
                     _evalExamCache[examId] = examData;
                 }
+
+                if (examData.status === 'FINALIZED' || examData.teacherFinalized) {
+                    showToast('This evaluation is finalized and locked.', 'warning');
+                    return;
+                }
+
+                if (statusBadge) { statusBadge.className = 'badge badge-info'; statusBadge.textContent = 'Saving...'; }
 
                 const absentBtn = document.getElementById('absent-btn-' + studentId);
                 const isAbsent = absentBtn && absentBtn.dataset.absent === '1';
@@ -4431,17 +4439,29 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     allFilled = false;
                 } else if (examType === 'standard') {
                     examData.criteria.forEach((criterion, idx) => {
-                        const val = document.querySelector(`#input-${studentId}-${idx}`)?.value;
+                        const input = document.querySelector(`#input-${studentId}-${idx}`);
+                        const val = input?.value;
                         if (val === '' || val == null) { marks.push(null); allFilled = false; }
-                        else { const m = parseFloat(val); marks.push(m); totalMarks += m; }
+                        else { 
+                            const m = parseFloat(val); 
+                            if (m < 0) { showToast(`Marks cannot be negative. Student: ${studentId}`, 'danger'); throw new Error('Negative marks'); }
+                            if (m > criterion.maxMarks) { showToast(`Marks for ${criterion.name} exceed max (${criterion.maxMarks}). Student: ${studentId}`, 'danger'); throw new Error('Marks exceeded'); }
+                            marks.push(m); totalMarks += m; 
+                        }
                     });
                 } else {
                     examData.courseOutcomes.forEach((co, coIdx) => {
                         co.criteria.forEach((c, cIdx) => {
-                            const val = document.querySelector(`#input-${studentId}-${coIdx}-${cIdx}`)?.value;
+                            const input = document.querySelector(`#input-${studentId}-${coIdx}-${cIdx}`);
+                            const val = input?.value;
                             const key = `CO${coIdx + 1}_C${cIdx + 1}`;
                             if (val === '' || val == null) { coMarks[key] = null; allFilled = false; }
-                            else { const m = parseFloat(val); coMarks[key] = m; totalMarks += m; }
+                            else { 
+                                const m = parseFloat(val); 
+                                if (m < 0) { showToast(`Marks cannot be negative. student ${studentId}`, 'danger'); throw new Error('Negative marks'); }
+                                if (m > c.maxMarks) { showToast(`Marks for ${co.name} exceed max (${c.maxMarks}). Student: ${studentId}`, 'danger'); throw new Error('Marks exceeded'); }
+                                coMarks[key] = m; totalMarks += m; 
+                            }
                         });
                     });
                 }
@@ -4482,39 +4502,89 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     });
                 }
 
-                const studentNameEl = document.querySelector(`[data-student="${studentId}"]`);
-                const studentCardHeader = document.querySelector(`#student-${studentId}`)?.previousElementSibling;
-                const studentDisplayName = studentCardHeader?.querySelector('h4')?.textContent?.replace(/^[\s\d.]+/, '').trim() || studentId;
+                const studentCard = document.querySelector(`.card[data-student="${studentId}"]`);
+                const studentDisplayName = studentCard?.querySelector('div[style*="font-weight:700"]')?.textContent?.replace(/\u25B6/g, '').trim() || studentId;
+                const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', examData.subjectId));
+                const subjectData = subjectDoc.data();
+                const studentDoc = await window.getDoc(window.doc(window.db, 'students', studentId));
+                const studentData = studentDoc.data();
+
                 const resultData = {
                     examId, studentId,
                     studentName: studentDisplayName,
-                    marks: examType === 'standard' ? marks : [],
-                    coMarks: examType === 'ca' ? coMarks : {},
-                    coAttainment: examType === 'ca' ? coAttainment : [],
-                    totalMarks: finalMarks,
-                    maxMarks: examType === 'ca' ? Math.round(maxTotalMarks / criteriaCount) : maxTotalMarks,
-                    percentage: Math.round(percentage),
+                    enrollment: studentData?.enrollment || studentId, // CRITICAL FIX: Added enrollment for Marksheet Print
+                    marks: (examType === 'standard') ? marks : [],
+                    coMarks: (examType === 'ca' || examType === 'ese') ? coMarks : {},
+                    coAttainment: (examType === 'ca' || examType === 'ese') ? coAttainment : [],
+                    totalMarks: isAbsent ? -1 : finalMarks,
+                    maxMarks: (examType === 'ca' || examType === 'ese') ? Math.round(maxTotalMarks / criteriaCount) : maxTotalMarks,
+                    percentage: isAbsent ? 'AB' : Math.round(percentage),
                     grade,
                     absent: isAbsent || false,
                     status: isAbsent ? 'ABSENT' : (allFilled ? 'COMPLETE' : 'INCOMPLETE'),
                     evaluatedAt: new Date().toISOString(),
-                    evaluatedBy: window.currentUser.uid
+                    evaluatedBy: window.currentUser.uid,
+                    division: subjectData?.division || '',
+                    batch: studentData?.batch || subjectData?.division || '',
+                    academicYear: subjectData?.academicYear || '',
+                    semester: subjectData?.semester || ''
                 };
 
-                const existingSnap = await window.getDocs(window.query(
-                    window.collection(window.db, 'results'),
-                    window.where('examId', '==', examId),
-                    window.where('studentId', '==', studentId)
-                ));
-                if (!existingSnap.empty) {
-                    await window.updateDoc(window.doc(window.db, 'results', existingSnap.docs[0].id), resultData);
-                } else {
-                    await window.addDoc(window.collection(window.db, 'results'), resultData);
-                }
+                // --- LOCAL DATABASE SYNC (As requested in diagram) ---
+                const localKey = `evaluator_local_${examId}`;
+                let localData = JSON.parse(localStorage.getItem(localKey) || '{}');
+                localData[studentId] = { ...resultData, syncStatus: 'LOCAL' };
+                localStorage.setItem(localKey, JSON.stringify(localData));
 
-                if (statusBadge) {
-                    statusBadge.className = isAbsent ? 'badge badge-secondary' : 'badge badge-success';
-                    statusBadge.textContent = isAbsent ? 'Absent' : 'Saved';
+                try {
+                    const existingSnap = await window.getDocs(window.query(
+                        window.collection(window.db, 'results'),
+                        window.where('examId', '==', examId),
+                        window.where('studentId', '==', studentId)
+                    ));
+                    
+                    const isOnline = navigator.onLine;
+
+                    if (!existingSnap.empty) {
+                        await window.updateDoc(window.doc(window.db, 'results', existingSnap.docs[0].id), resultData);
+                    } else {
+                        await window.addDoc(window.collection(window.db, 'results'), resultData);
+                    }
+                    
+                    if (isOnline) {
+                        // Mark as cloud-saved in local cache
+                        localData[studentId].syncStatus = 'CLOUD';
+                        localStorage.setItem(localKey, JSON.stringify(localData));
+                        if (statusBadge) {
+                            statusBadge.className = isAbsent ? 'badge badge-secondary' : 'badge badge-success';
+                            statusBadge.textContent = isAbsent ? 'Absent' : 'Saved (Cloud) (Synced)';
+                        }
+                    } else {
+                        if (statusBadge) {
+                            statusBadge.className = 'badge badge-warning';
+                            statusBadge.textContent = isAbsent ? 'Absent (Queued)' : 'Saved (Local) (Pending Sync)';
+                        }
+                    }
+                    
+                    // Auto-scroll to next student for better UX
+                    const nextCard = studentCard?.nextElementSibling;
+                    if (nextCard && nextCard.classList.contains('card') && nextCard.dataset.student) {
+                        setTimeout(() => {
+                            nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const nextSid = nextCard.dataset.student;
+                            const nextContent = document.getElementById('student-' + nextSid);
+                            if (nextContent && nextContent.style.display === 'none') {
+                                toggleStudent('student-' + nextSid);
+                            }
+                        }, 500);
+                    }
+                } catch (cloudError) {
+                    console.warn('Cloud save failed, data preserved locally:', cloudError);
+                    if (statusBadge) {
+                        statusBadge.className = 'badge badge-warning';
+                        statusBadge.textContent = isAbsent ? 'Absent (Local)' : 'Saved (Local) (Cached)';
+                    }
+                    showToast('Marks saved locally. Will sync when online.', 'info', 2000);
                 }
             } catch (error) {
                 const badge = document.getElementById('status-student-' + studentId);
@@ -4525,6 +4595,11 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         async function saveAllEvaluations(examId, examType) {
+            const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
+            if (examDoc.exists() && (examDoc.data().status === 'FINALIZED' || examDoc.data().teacherFinalized)) {
+                showToast('This evaluation is finalized and locked.', 'warning');
+                return;
+            }
             const btn = document.querySelector(`button[onclick*="saveAllEvaluations"]`);
             if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
             const studentIds = new Set();
@@ -4557,14 +4632,13 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         if (badge) { badge.className = 'badge badge-secondary'; badge.textContent = 'Absent'; }
                         return;
                     }
-
                     if (badge) { badge.className = 'badge badge-success'; badge.textContent = 'Saved'; }
                     if (examType === 'standard' && result.marks) {
                         result.marks.forEach((mark, idx) => {
                             const input = document.querySelector(`#input-${sid}-${idx}`);
                             if (input && mark !== null) input.value = mark;
                         });
-                    } else if (examType === 'ca' && result.coMarks) {
+                    } else if ((examType === 'ca' || examType === 'ese') && result.coMarks) {
                         Object.keys(result.coMarks).forEach(key => {
                             const match = key.match(/CO(\d+)_C(\d+)/);
                             if (match) {
@@ -4584,199 +4658,95 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const examId = document.getElementById('teacherExamSelect').value;
             const formDiv = document.getElementById('evaluationForm');
             if (!examId) { formDiv.innerHTML = ''; return; }
-            formDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Loading evaluation form...</div>';
+            
+            formDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Loading evaluation...</div>';
+            
             try {
-
-                const examDocP = window.getDoc(window.doc(window.db, 'exams', examId));
-                const teacherCheckP = window.getDocs(window.query(window.collection(window.db, 'teacher_assignments'),
-                    window.where('teacherEmail', '==', window.currentUser.email)));
-
-                const [examDoc, teacherSnap] = await Promise.all([examDocP, teacherCheckP]);
-
-                if (!examDoc.exists()) { formDiv.innerHTML = '<div class="alert alert-danger">Exam not found</div>'; return; }
+                const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
+                if (!examDoc.exists()) { formDiv.innerHTML = 'Exam not found'; return; }
                 const examData = examDoc.data();
                 _evalExamCache[examId] = examData;
 
-                if (examData.status === 'FINALIZED' || examData.lifecycleState === 'FINALIZED') {
-                    formDiv.innerHTML = '<div class="alert alert-danger"><strong>This exam is FINALIZED</strong><br>No further evaluations are allowed.</div>';
-                    return;
-                }
+                const teacherSnap = await window.getDocs(window.query(window.collection(window.db, 'teacher_assignments'), 
+                    window.where('teacherEmail', '==', window.currentUser.email)));
+                
+                const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', examData.subjectId));
+                if (!subjectDoc.exists()) { formDiv.innerHTML = 'Subject not found'; return; }
+                const sd = subjectDoc.data();
 
-                const subjectDocP = window.getDoc(window.doc(window.db, 'subjects', examData.subjectId));
-                const [subjectDoc] = await Promise.all([subjectDocP]);
-                if (!subjectDoc.exists()) { formDiv.innerHTML = '<div class="alert alert-danger">Subject not found for this exam.</div>'; return; }
-                const subjectData = subjectDoc.data();
-
-                const assigned = teacherSnap.docs.some(d => d.data().subjectId === examData.subjectId);
-                if (!assigned) {
-                    formDiv.innerHTML = '<div class="alert alert-danger"><strong>Access Denied</strong><br>You are not assigned to this subject.</div>';
-                    return;
-                }
-
-                const studentsP = window.getDocs(window.query(window.collection(window.db, 'students'),
-                    window.where('class', '==', subjectData.class),
-                    window.where('division', '==', subjectData.division)));
-                const resultsP = window.getDocs(window.query(window.collection(window.db, 'results'),
+                const studentsSnap = await window.getDocs(window.query(window.collection(window.db, 'students'), 
+                    window.where('class', '==', sd.class), window.where('division', '==', sd.division)));
+                const resultsSnap = await window.getDocs(window.query(window.collection(window.db, 'results'), 
                     window.where('examId', '==', examId)));
-
-                const [studentsSnap, existingResultsSnap] = await Promise.all([studentsP, resultsP]);
-
-                if (studentsSnap.empty) {
-                    formDiv.innerHTML = '<div class="alert alert-warning">No students found for this class/division</div>';
-                    return;
-                }
-
+                
                 const resultsMap = {};
-                existingResultsSnap.forEach(d => { resultsMap[d.data().studentId] = d.data(); });
+                resultsSnap.forEach(d => resultsMap[d.data().studentId] = d.data());
 
-                let assignmentsMap = {};
-                if (examData.examType === 'ca') {
-                    const assignPromises = studentsSnap.docs.map(sd =>
-                        window.getDoc(window.doc(window.db, 'ca_question_assignments', `${examId}_${sd.id}`))
-                            .then(d => { if (d.exists()) assignmentsMap[sd.id] = d.data().assignments; }).catch(function () { })
-                    );
-                    await Promise.all(assignPromises);
-                }
+                let html = `<div style="background:var(--bg-surface);padding:15px;border-radius:10px;border:1px solid var(--border);margin-bottom:20px;">
+                    <h4 style="margin:0;">${examData.name}</h4>
+                    <p style="margin:0;font-size:12px;color:var(--text-muted);">${sd.name} | ${sd.class}-${sd.division}</p>
+                </div>`;
 
-                let html = `
- <div style="margin-bottom:16px;padding:14px;background:#e3f2fd;border-radius:8px;border-left:4px solid #2196f3;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
-<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:14px;">
-<span><strong>📝 ${examData.name}</strong></span>
-<span><strong>Subject:</strong> ${subjectData.name}</span>
-<span><strong>Class:</strong> ${subjectData.class}-${subjectData.division}</span>
-<span><strong>Students:</strong> <span class="badge badge-info">${studentsSnap.size}</span></span>
-<span><strong>Type:</strong> <span class="badge badge-${examData.examType === 'ca' ? 'primary' : 'secondary'}">${examData.examType === 'ca' ? 'CA' : 'Standard'}</span></span>
-</div>
-<button class="btn btn-success btn-sm" onclick="saveAllEvaluations('${examId}','${examData.examType}')" style="white-space:nowrap;font-weight:600;">💾 Save All (${studentsSnap.size})</button>
-</div>
-<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:12px;">
-<strong>💡 Quick Tips:</strong>
-<ul style="margin:8px 0 0 0;padding-left:20px;font-size:13px;">
-<li>Click any student name to expand/collapse their marks entry</li>
-<li>Use Tab key to move between fields quickly</li>
-<li>Press Ctrl+S (Cmd+S on Mac) to save current student</li>
-<li>Values are validated automatically (max marks, negatives blocked)</li>
-<li>See live total as you type!</li>
-</ul>
-</div>
-<div id="studentEvaluations">`;
-
-                studentsSnap.docs.forEach((studentDoc, studentIndex) => {
+                studentsSnap.docs.forEach(studentDoc => {
                     const student = studentDoc.data();
                     const sid = studentDoc.id;
-                    const existing = resultsMap[sid];
-                    const isAbsent = existing?.absent === true;
-                    const savedStatus = existing ? (isAbsent ? 'Absent' : 'Saved') : 'Not Saved';
-                    const badgeClass = existing ? (isAbsent ? 'badge-secondary' : 'badge-success') : 'badge-secondary';
-                    const cardOpacity = isAbsent ? '0.45' : '1';
+                    const res = resultsMap[sid];
+                    const isAbsent = res?.absent === true;
 
-                    html += `
- <div class="card" style="margin-bottom:12px;border-left:4px solid ${isAbsent ? '#ef4444' : '#28a745'};">
-<div onclick="toggleStudent('student-${sid}')" style="padding:13px 15px;cursor:pointer;background:linear-gradient(to right,#f8f9fa,#fff);border-bottom:1px solid #dee2e6;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-<div style="flex:1;min-width:180px;">
-<h4 style="margin:0;color:${isAbsent ? '#ef4444' : '#28a745'};font-size:16px;">
-<span id="arrow-student-${sid}" style="display:inline-block;transition:transform 0.3s;"></span> ${studentIndex + 1}. ${student.name}
-</h4>
-<small style="color:#6c757d;">${student.enrollment}${student.rollNo ? ' | Roll: ' + student.rollNo : ''}</small>
-</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-<span id="status-student-${sid}" class="badge ${badgeClass}">${savedStatus}</span>
-<button id="absent-btn-${sid}" class="btn ${isAbsent ? 'btn-danger' : 'btn-warning'} btn-sm"
- data-absent="${isAbsent ? '1' : '0'}"
- onclick="event.stopPropagation(); toggleAbsent('${sid}','${examId}','${examData.examType}')">${isAbsent ? 'Absent' : 'Mark Absent'}</button>
-<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); saveStudentEvaluation('${sid}','${examId}','${examData.examType}')">Save</button>
-</div>
-</div>
-<div id="student-${sid}" style="display:none;padding:15px;background:#fff;opacity:${cardOpacity};">`;
+                    html += `<div class="card" style="margin-bottom:10px;padding:0;border-left:5px solid ${isAbsent?'#ef4444':(res?'#22c55e':'#e5e7eb')};" data-student="${sid}">
+                        <div onclick="toggleStudent('student-${sid}')" style="padding:15px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-weight:700;">
+                                     <span id="arrow-student-${sid}" style="display:inline-block;transition:transform 0.3s;margin-right:8px;">\u25B6</span> 
+                                    ${sanitizeString(student.name)}
+                                </div>
+                                <div style="font-size:11px;color:var(--text-muted);">${student.enrollment}</div>
+                            </div>
+                            <span id="status-student-${sid}" class="badge ${res?(isAbsent?'badge-danger':'badge-success'):'badge-secondary'}">${res?(isAbsent?'Absent':'Saved'):'Pending'}</span>
+                        </div>
+                        <div id="student-${sid}" style="display:none;padding:15px;background:#f9fafb;border-top:1px solid #e5e7eb;">
+                            <div style="display:flex;gap:10px;margin-bottom:15px;">
+                                <button id="absent-btn-${sid}" data-absent="${isAbsent?'1':'0'}" class="btn btn-sm ${isAbsent?'btn-danger':'btn-secondary'}" onclick="toggleAbsent('${sid}','${examId}','${examData.examType}')">${isAbsent?'Marked Absent':'Mark Absent'}</button>
+                                <button class="btn btn-success btn-sm" onclick="saveStudentEvaluation('${sid}','${examId}','${examData.examType}')">Save Marks</button>
+                            </div>`;
 
-                    if (examData.examType === 'standard') {
-                        html += `<div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">`;
-                        examData.criteria.forEach((criterion, idx) => {
-                            const savedMark = existing?.marks?.[idx];
-                            html += `
- <div class="form-group" style="margin:0;">
-<label style="font-weight:600;color:#495057;font-size:13px;display:block;margin-bottom:4px;">
-${criterion.name} <span style="color:#888;font-weight:normal;">(Max: ${criterion.maxMarks})</span>
-</label>
-<input type="number" class="eval-input"
- id="input-${sid}-${idx}"
- data-student="${sid}" data-criterion="${idx}"
- min="0" max="${criterion.maxMarks}" step="0.5"
- placeholder="Marks" value="${savedMark != null ? savedMark : ''}"
- ${isAbsent ? 'disabled' : ''}
- style="width:100%;padding:8px;border:1px solid #ced4da;border-radius:4px;font-size:14px;"
- onchange="validateMarks(this,${criterion.maxMarks});markAsModified('${sid}')">
-</div>`;
+                    if(examData.examType === 'ca' || examData.examType === 'ese') {
+                        html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">`;
+                        examData.courseOutcomes.forEach((co, cidx) => {
+                            const val = res?.coMarks?.[`CO${cidx+1}_C1`] || '';
+                            html += `<div style="text-align:center;">
+                                <label style="font-size:10px;font-weight:700;display:block;">${co.name}</label>
+                                <input type="number" class="eval-input-ca" id="input-${sid}-${cidx}-0" step="0.5" value="${val}"
+                                    style="width:100%;text-align:center;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+                                <div style="font-size:9px;color:#6b7280;">Max: ${co.criteria[0]?.maxMarks || 0}</div>
+                            </div>`;
                         });
                         html += `</div>`;
                     } else {
-                        const assignedQs = assignmentsMap[sid] || {};
-                        html += `<div>`;
-                        examData.courseOutcomes.forEach((co, coIdx) => {
-                            const coKey = `CO${coIdx + 1}`;
-                            const studentQs = assignedQs[coKey] || [];
-                            html += `
- <div style="background:#f1f8ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:10px;">
-<div style="font-weight:700;color:#1e40af;font-size:13px;margin-bottom:6px;">${co.name}${co.description ? ' - ' + co.description : ''}</div>
-${studentQs.length > 0
-                                    ? `<div style="background:#fff;border:1px solid #dbeafe;border-radius:6px;padding:8px;margin-bottom:8px;font-size:12px;color:#374151;">
-${studentQs.map((q, qi) => `<div style="padding:2px 0;border-bottom:1px solid #f3f4f6;">${qi + 1}. ${q}</div>`).join('')}
-</div>`
-                                    : `<div style="font-size:12px;color:#9ca3af;margin-bottom:6px;font-style:italic;">No questions assigned</div>`}
-<div style="display:flex;flex-wrap:wrap;gap:10px;">
-${co.criteria.map((c, cIdx) => {
-                                        const key = `CO${coIdx + 1}_C${cIdx + 1}`;
-                                        const savedMark = existing?.coMarks?.[key];
-                                        return `
- <div class="form-group" style="margin:0;min-width:120px;">
-<label style="font-weight:600;color:#374151;font-size:12px;display:block;margin-bottom:3px;">
-${c.name} <span style="color:#9ca3af;font-weight:normal;">(Max: ${c.maxMarks})</span>
-</label>
-<input type="number" class="eval-input-ca"
- id="input-${sid}-${coIdx}-${cIdx}"
- data-student="${sid}" data-co="${coIdx}" data-criterion="${cIdx}"
- min="0" max="${c.maxMarks}" step="0.5"
- placeholder="Marks" value="${savedMark != null ? savedMark : ''}"
- ${isAbsent ? 'disabled' : ''}
- style="width:100%;padding:7px;border:2px solid #e5e7eb;border-radius:6px;font-size:13px;"
- onchange="validateMarks(this,${c.maxMarks});markAsModified('${sid}')">
-</div>`;
-                                    }).join('')}
-</div>
-</div>`;
+                        html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">`;
+                        examData.criteria.forEach((c, idx) => {
+                            const val = res?.marks?.[idx] || '';
+                            html += `<div>
+                                <label style="font-size:11px;display:block;">${c.name}</label>
+                                <input type="number" class="eval-input" id="input-${sid}-${idx}" value="${val}" min="0" step="0.5"
+                                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+                            </div>`;
                         });
                         html += `</div>`;
                     }
-
-                    html += `<div id="live-total-${sid}"></div>`;
-
-                    html += `
-<div style="margin-top:12px;padding-top:12px;border-top:1px solid #dee2e6;text-align:right;">
-<button class="btn btn-success" onclick="saveStudentEvaluation('${sid}','${examId}','${examData.examType}')">
-💾 Save ${student.name.split(' ')[0]}'s Marks
-</button>
-</div>
-</div>
-</div>`;
+                    html += `</div></div>`;
                 });
 
-                html += `</div>
-<div style="position:sticky;bottom:0;background:#fff;padding:14px;border-top:2px solid #28a745;margin-top:16px;text-align:center;box-shadow:0 -2px 10px rgba(0,0,0,.1);">
-<button class="btn btn-success btn-lg" onclick="saveAllEvaluations('${examId}','${examData.examType}')" style="padding:11px 28px;font-size:15px;">
-Save All Students (${studentsSnap.size} students)
-</button>
-</div>`;
-
+                html += `<div style="padding:20px;text-align:center;">
+                    <button class="btn btn-success btn-lg" onclick="saveAllEvaluations('${examId}','${examData.examType}')">Save All ${studentsSnap.size} Students</button>
+                </div>`;
+                
                 formDiv.innerHTML = html;
-
-                setTimeout(() => {
-                    if (typeof window.setupEvaluationHelpers === 'function') {
-                        window.setupEvaluationHelpers();
-                    }
-                }, 100);
+                setTimeout(() => window.setupEvaluationHelpers?.(), 50);
 
             } catch (error) {
-                formDiv.innerHTML = '<div class="alert alert-danger">Error loading evaluation form: ' + error.message + '</div>';
+                console.error(error);
+                formDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
             }
         }
 
@@ -4818,7 +4788,7 @@ Save All Students (${studentsSnap.size} students)
 <strong>${studentData.name}</strong> | Enrollment: ${studentData.enrollment} | Class: ${studentData.class}-${studentData.division}<br>
 <strong>Total Exams:</strong> ${resultsSnap.size} &nbsp;|&nbsp; <strong>Average Score:</strong> ${(isNaN(averagePercentage) ? 0 : averagePercentage)}%
 </div>
-<table><thead><tr><th>Exam</th><th>Subject</th><th>Marks</th><th>Percentage</th><th>Grade</th><th>Status</th></tr></thead><tbody>`;
+<div class="table-container"><table><thead><tr><th>Exam</th><th>Subject</th><th>Marks</th><th>Percentage</th><th>Grade</th><th>Status</th></tr></thead><tbody>`;
 
                 for (const resultDoc of resultsSnap.docs) {
                     const result = resultDoc.data();
@@ -4865,7 +4835,7 @@ Save All Students (${studentsSnap.size} students)
                     }
                 }
 
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 resultsDiv.innerHTML = html;
             } catch (error) {
                 resultsDiv.innerHTML = '<div class="alert alert-danger">Error loading results: ' + error.message + '<br><small>Check that your enrollment number is correctly registered.</small></div>';
@@ -4943,12 +4913,15 @@ Save All Students (${studentsSnap.size} students)
             }
         }
         function calculateGrade(percentage) {
-            if (percentage >= 90) return 'A+';
-            if (percentage >= 80) return 'A';
-            if (percentage >= 70) return 'B+';
-            if (percentage >= 60) return 'B';
-            if (percentage >= 50) return 'C';
-            if (percentage >= 40) return 'D';
+            if (percentage === 'AB' || percentage === -1) return 'AB';
+            const p = parseFloat(percentage);
+            if (isNaN(p)) return 'N/A';
+            if (p >= 90) return 'A+';
+            if (p >= 80) return 'A';
+            if (p >= 70) return 'B+';
+            if (p >= 60) return 'B';
+            if (p >= 50) return 'C';
+            if (p >= 40) return 'D';
             return 'F';
         }
         function calculateCOStatus(percentage) {
@@ -5217,7 +5190,6 @@ Save All Students (${studentsSnap.size} students)
         }
 
         function downloadCSV(filename, csvContent) {
-
             console.warn('downloadCSV is deprecated. Please use exportToExcel()');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -5297,7 +5269,7 @@ Save All Students (${studentsSnap.size} students)
                 csv += '\n';
                 studentsSnap.forEach(docSnap => {
                     const student = docSnap.data();
-                    csv += `${student.enrollment},${escapeCSV(student.name)}`;
+                    csv += `${student.enrollment},${escapeCSV(sanitizeString(student.name, 100))}`;
                     if (examData.examType === 'standard') {
                         examData.criteria.forEach(() => csv += ',');
                     } else if (examData.examType === 'ca') {
@@ -5359,7 +5331,7 @@ Save All Students (${studentsSnap.size} students)
 
                 studentsSnap.forEach(docSnap => {
                     const student = docSnap.data();
-                    csv += `${student.enrollment},${escapeCSV(student.name)}`;
+                    csv += `${student.enrollment},${escapeCSV(sanitizeString(student.name, 100))}`;
 
                     if (examData.examType === 'standard') {
                         examData.criteria.forEach(() => csv += ',');
@@ -5525,7 +5497,7 @@ Save All Students (${studentsSnap.size} students)
 <td>${srNo}</td>
 <td>${student.rollNo || '-'}</td>
 <td>${student.enrollment}</td>
-<td style="font-weight: 500;">${student.name}</td>
+<td style="font-weight: 500;">${sanitizeString(student.name)}</td>
 <td style="font-size: 12px;">${student.email || '-'}</td>
 <td style="font-size: 12px;">${student.phone || '-'}</td>`;
 
@@ -5667,7 +5639,7 @@ Save All Students (${studentsSnap.size} students)
                     const student = studentDoc.data();
                     const result = resultsMap[studentDoc.id];
 
-                    csv += `${srNo},${student.rollNo || ''},${student.enrollment},${escapeCSV(student.name)},${student.email || ''},${student.phone || ''},`;
+                    csv += `${srNo},${student.rollNo || ''},${student.enrollment},${escapeCSV(sanitizeString(student.name, 100))},${student.email || ''},${student.phone || ''},`;
 
                     if (result) {
                         if (result.absent) {
@@ -5996,10 +5968,10 @@ Save All Students (${studentsSnap.size} students)
                 return;
             }
             try {
-                showLoader('resultsLoader');
+                showLoader('hodResultsLoader');
                 const resultsContainer = document.getElementById('hodResultsContainer');
                 if (!resultsContainer) {
-                    hideLoader('resultsLoader');
+                    hideLoader('hodResultsLoader');
                     return;
                 }
                 resultsContainer.innerHTML = '';
@@ -6007,21 +5979,26 @@ Save All Students (${studentsSnap.size} students)
                 const hodDept = window.currentUser.department || window.currentUser.departmentId;
                 if (!hodDept) {
                     showToast('Department not assigned to HOD', 'danger');
-                    hideLoader('resultsLoader');
+                    hideLoader('hodResultsLoader');
                     return;
                 }
 
                 const examsQuery = (function () {
                     const yr = document.getElementById('academicYear')?.value || '';
                     const sm = document.getElementById('semester')?.value || '';
-                    if (yr && sm) return window.query(window.collection(window.db, 'exams'), window.where('academicYear', '==', yr), window.where('semester', '==', sm), window.where('status', '==', 'FINALIZED'), window.orderBy('createdAt', 'desc'));
-                    return window.query(window.collection(window.db, 'exams'), window.where('status', '==', 'FINALIZED'), window.orderBy('createdAt', 'desc'));
+                    let q = window.collection(window.db, 'exams');
+                    let constraints = [window.where('status', '==', 'FINALIZED')];
+                    if (yr) constraints.push(window.where('academicYear', '==', yr));
+                    if (sm) constraints.push(window.where('semester', '==', sm));
+                    if (hodDept) constraints.push(window.where('department', '==', hodDept));
+                    
+                    return window.query(q, ...constraints, window.orderBy('createdAt', 'desc'));
                 })();
                 const examsSnapshot = await window.getDocs(examsQuery)
 
                 if (examsSnapshot.empty) {
                     resultsContainer.innerHTML = '<p class="no-data">No finalized results available in your department.</p>';
-                    hideLoader('resultsLoader');
+                    hideLoader('hodResultsLoader');
                     return;
                 }
 
@@ -6086,9 +6063,9 @@ Save All Students (${studentsSnap.size} students)
  <td>${resultsSnapshot.size}</td>
  <td>${finalizedDate}</td>
  <td class="action-buttons">
- <button class="btn btn-sm btn-info" onclick="viewResultDetails('${examId}')">👁 View</button>
- <button class="btn btn-sm btn-success" onclick="exportResults('${examId}', 'excel')">📊 Excel</button>
- <button class="btn btn-sm btn-danger" onclick="exportResults('${examId}', 'pdf')">📄 PDF</button>
+ <button class="btn btn-sm btn-info" onclick="previewEvaluationSubmission('${examId}', true)">Monitor</button>
+ <button class="btn btn-sm btn-success" onclick="exportResults('${examId}', 'excel')">Excel</button>
+ <button class="btn btn-sm btn-danger" onclick="exportResults('${examId}', 'pdf')">PDF</button>
  </td>
  `;
                     tbody.appendChild(row);
@@ -6097,7 +6074,7 @@ Save All Students (${studentsSnap.size} students)
                 console.error('Error loading HOD results:', error);
                 showToast('Failed to load results: ' + error.message, 'danger');
             } finally {
-                hideLoader('resultsLoader');
+                hideLoader('coordinatorResultsLoader');
             }
         }
 
@@ -6108,39 +6085,34 @@ Save All Students (${studentsSnap.size} students)
                 return;
             }
             try {
-                showLoader('resultsLoader');
+                showLoader('coordinatorResultsLoader');
                 const resultsContainer = document.getElementById('coordinatorResultsContainer');
                 if (!resultsContainer) {
-                    hideLoader('resultsLoader');
+                    hideLoader('coordinatorResultsLoader');
                     return;
                 }
                 resultsContainer.innerHTML = '';
 
                 // Load all finalized exams for current academic year/semester
+                const coordDept = window.currentUser.department || window.currentUser.departmentId;
                 const year = document.getElementById('academicYear')?.value || '';
                 const sem = document.getElementById('semester')?.value || '';
-                let examsQuery;
-                if (year && sem) {
-                    examsQuery = window.query(
-                        window.collection(window.db, 'exams'),
-                        window.where('academicYear', '==', year),
-                        window.where('semester', '==', sem),
-                        window.where('status', '==', 'FINALIZED'),
-                        window.orderBy('createdAt', 'desc')
-                    );
-                } else {
-                    examsQuery = window.query(
-                        window.collection(window.db, 'exams'),
-                        window.where('status', '==', 'FINALIZED'),
-                        window.orderBy('createdAt', 'desc')
-                    );
-                }
+                
+                let examsQuery = (function() {
+                    let q = window.collection(window.db, 'exams');
+                    let constraints = [window.where('status', '==', 'FINALIZED')];
+                    if (year) constraints.push(window.where('academicYear', '==', year));
+                    if (sem) constraints.push(window.where('semester', '==', sem));
+                    if (coordDept) constraints.push(window.where('department', '==', coordDept));
+                    return window.query(q, ...constraints, window.orderBy('createdAt', 'desc'));
+                })();
+                
                 const examsSnapshot = await window.getDocs(examsQuery);
                 let allExams = examsSnapshot.docs;
 
                 if (allExams.length === 0) {
                     resultsContainer.innerHTML = '<p class="no-data">No finalized results available for your subjects.</p>';
-                    hideLoader('resultsLoader');
+                    hideLoader('coordinatorResultsLoader');
                     return;
                 }
 
@@ -6205,9 +6177,9 @@ Save All Students (${studentsSnap.size} students)
  <td>${resultsSnapshot.size}</td>
  <td>${finalizedDate}</td>
  <td class="action-buttons">
- <button class="btn btn-sm btn-info" onclick="viewResultDetails('${examId}')">👁 View</button>
- <button class="btn btn-sm btn-success" onclick="exportResults('${examId}', 'excel')">📊 Excel</button>
- <button class="btn btn-sm btn-danger" onclick="exportResults('${examId}', 'pdf')">📄 PDF</button>
+ <button class="btn btn-sm btn-info" onclick="previewEvaluationSubmission('${examId}', true)">Monitor</button>
+ <button class="btn btn-sm btn-success" onclick="exportResults('${examId}', 'excel')">Excel</button>
+ <button class="btn btn-sm btn-danger" onclick="exportResults('${examId}', 'pdf')">PDF</button>
  </td>
  `;
                     tbody.appendChild(row);
@@ -6216,7 +6188,7 @@ Save All Students (${studentsSnap.size} students)
                 console.error('Error loading Coordinator results:', error);
                 showToast('Failed to load results: ' + error.message, 'danger');
             } finally {
-                hideLoader('resultsLoader');
+                hideLoader('coordinatorResultsLoader');
             }
         }
 
@@ -6373,10 +6345,18 @@ Save All Students (${studentsSnap.size} students)
                     const studentDoc = await window.getDoc(window.doc(window.db, 'students', resultData.studentId));
                     const studentData = studentDoc.exists() ? studentDoc.data() : {};
 
-                    const marksObtained = resultData.totalMarks || 0;
+                    const isAbsent = resultData.isAbsent || resultData.totalMarks === -1;
+                    const marksObtained = isAbsent ? 'AB' : (resultData.totalMarks || 0);
                     const totalMarks = examData.totalMarks || 100;
-                    const percentage = ((marksObtained / totalMarks) * 100).toFixed(2);
-                    const grade = calculateGrade(percentage);
+
+                    let percentage, grade;
+                    if (isAbsent) {
+                        percentage = 'AB';
+                        grade = 'AB';
+                    } else {
+                        percentage = ((marksObtained / totalMarks) * 100).toFixed(2);
+                        grade = calculateGrade(percentage);
+                    }
 
                     resultsData.push({
                         rollNumber: studentData.rollNumber || 'N/A',
@@ -6470,6 +6450,58 @@ Save All Students (${studentsSnap.size} students)
             XLSX.writeFile(wb, fileName);
         }
 
+        // --- NEW PROFESSIONAL PDF HEADER HELPER ---
+        function drawPDFHeader(doc, school, title, metadata = []) {
+            // Placeholder MIT Round Logo (Vector shape if actual image missing)
+            doc.setDrawColor(100, 116, 139);
+            doc.setLineWidth(0.5);
+            doc.circle(25, 18, 10, 'S'); 
+            doc.setFontSize(6);
+            doc.text('MIT ADT', 25, 19, { align: 'center' });
+
+            // University Branding
+            doc.setTextColor(30, 58, 138); // MIT Blue
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('MIT ADT UNIVERSITY, PUNE', 110, 15, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text('Art, Design & Technology', 110, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(51, 65, 85);
+            doc.text(school.toUpperCase(), 110, 26, { align: 'center' });
+
+            doc.setDrawColor(30, 58, 138);
+            doc.setLineWidth(0.8);
+            doc.line(15, 28, 195, 28);
+
+            // Document Title
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(title, 105, 36, { align: 'center' });
+
+            // Meta Info
+            let y = 42;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(71, 85, 105);
+            metadata.forEach(line => {
+                doc.text(line, 105, y, { align: 'center' });
+                y += 5;
+            });
+
+            doc.setDrawColor(203, 213, 225);
+            doc.setLineWidth(0.2);
+            doc.line(15, y, 195, y);
+            
+            return y + 8;
+        }
+
         // PDF Export with Password Protection
         async function exportToProtectedPDF(examData, subjectName, className, divisionName, resultsData) {
             const password = prompt('Enter a password to protect this PDF (leave blank for no password):');
@@ -6477,28 +6509,16 @@ Save All Students (${studentsSnap.size} students)
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text('Academic Evaluation Report', 105, 20, { align: 'center' });
+            let yPos = drawPDFHeader(doc, 'School of Art, Design & Technology', 'ACADEMIC EVALUATION REPORT', [
+                `Exam: ${examData.name || 'N/A'} | Subject: ${subjectName}`,
+                `Class: ${className} - ${divisionName} | Type: ${examData.examType?.toUpperCase() || 'N/A'}`
+            ]);
 
-            doc.setFontSize(12);
+            doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
-            let yPos = 35;
-
-            doc.text(`Exam Name: ${examData.name || 'N/A'}`, 15, yPos);
-            yPos += 7;
-            doc.text(`Subject: ${subjectName}`, 15, yPos);
-            yPos += 7;
-            doc.text(`Class: ${className} - ${divisionName}`, 15, yPos);
-            yPos += 7;
-            doc.text(`Exam Type: ${examData.examType?.toUpperCase() || 'N/A'}`, 15, yPos);
-            yPos += 7;
-            doc.text(`Total Marks: ${examData.totalMarks || 'N/A'}`, 15, yPos);
-            yPos += 7;
-            doc.text(`Finalized Date: ${examData.finalizedAt ? new Date(examData.finalizedAt).toLocaleString() : 'N/A'}`, 15, yPos);
-            yPos += 7;
             doc.text(`Total Students: ${resultsData.length}`, 15, yPos);
-            yPos += 10;
+            doc.text(`Finalized: ${examData.finalizedAt ? new Date(examData.finalizedAt).toLocaleDateString() : 'N/A'}`, 195, yPos, { align: 'right' });
+            yPos += 8;
 
             doc.setFontSize(10);
             doc.setFont(undefined, 'bold');
@@ -6555,11 +6575,13 @@ Save All Students (${studentsSnap.size} students)
                 yPos += 7;
                 doc.setFont(undefined, 'normal');
 
-                const avgPercentage = (resultsData.reduce((sum, r) => sum + parseFloat(r.percentage), 0) / resultsData.length).toFixed(2);
-                const maxPercentage = Math.max(...resultsData.map(r => parseFloat(r.percentage)));
-                const minPercentage = Math.min(...resultsData.map(r => parseFloat(r.percentage)));
-                const passCount = resultsData.filter(r => parseFloat(r.percentage) >= 40).length;
-                const failCount = resultsData.length - passCount;
+                const filteredResults = resultsData.filter(r => r.percentage !== 'AB');
+                const avgPercentage = filteredResults.length > 0 ? (filteredResults.reduce((sum, r) => sum + parseFloat(r.percentage), 0) / filteredResults.length).toFixed(2) : 'N/A';
+                const maxPercentage = filteredResults.length > 0 ? Math.max(...filteredResults.map(r => parseFloat(r.percentage))) : 'N/A';
+                const minPercentage = filteredResults.length > 0 ? Math.min(...filteredResults.map(r => parseFloat(r.percentage))) : 'N/A';
+                const passCount = filteredResults.filter(r => parseFloat(r.percentage) >= 40).length;
+                const absentCount = resultsData.length - filteredResults.length;
+                const failCount = filteredResults.length - passCount;
 
                 doc.text(`Average Percentage: ${avgPercentage}%`, 15, yPos);
                 yPos += 6;
@@ -6567,11 +6589,13 @@ Save All Students (${studentsSnap.size} students)
                 yPos += 6;
                 doc.text(`Lowest Percentage: ${minPercentage}%`, 15, yPos);
                 yPos += 6;
+                doc.text(`Absent Count: ${absentCount}`, 15, yPos);
+                yPos += 6;
                 doc.text(`Pass Count: ${passCount}`, 15, yPos);
                 yPos += 6;
                 doc.text(`Fail Count: ${failCount}`, 15, yPos);
                 yPos += 6;
-                doc.text(`Pass Rate: ${((passCount / resultsData.length) * 100).toFixed(2)}%`, 15, yPos);
+                doc.text(`Pass Rate: ${filteredResults.length > 0 ? ((passCount / filteredResults.length) * 100).toFixed(2) : 0}%`, 15, yPos);
             }
 
             const pageCount = doc.internal.getNumberOfPages();
@@ -6584,7 +6608,7 @@ Save All Students (${studentsSnap.size} students)
                 } else {
                     doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
                 }
-                doc.text(`Evaluator System © ${new Date().getFullYear()}`, 195, 290, { align: 'right' });
+                doc.text(`Evaluator System ?? ${new Date().getFullYear()}`, 195, 290, { align: 'right' });
             }
 
             if (password && password.trim() !== '') {
@@ -6608,7 +6632,7 @@ Save All Students (${studentsSnap.size} students)
                 setTimeout(() => {
                     console.log(`To add password protection:
 1. Open the PDF in Adobe Acrobat
-2. Go to Tools → Protect → Encrypt → Encrypt with Password
+2. Go to Tools > Protect > Encrypt > Encrypt with Password
 3. Set password: ${password}
 4. Save the protected PDF`);
                 }, 1000);
@@ -6633,12 +6657,12 @@ Save All Students (${studentsSnap.size} students)
             const difficulty = document.getElementById('qbDifficulty').value;
             const questionText = document.getElementById('qbQuestionText').value.trim();
 
-            const validation = validateForm(
+            const validation = window.validateForm(
                 { subject: subjectId, unit, questionText },
                 {
                     subject: { required: true },
                     unit: { required: true, custom: (v) => v >= 1 && v <= 10, customMessage: 'Unit must be between 1 and 10' },
-                    questionText: { required: true, minLength: 10 }
+                    questionText: { required: true, minLength: 5 }
                 }
             );
 
@@ -6810,6 +6834,111 @@ Save All Students (${studentsSnap.size} students)
                 showToast('Failed to import Excel file. Please check the file format.', 'danger');
             }
         }
+        
+        /**
+         * Import questions from PDF for the Question Bank
+         */
+        async function importQuestionsFromQB_PDF() {
+            const fileInput = document.getElementById('qbPDFImportFile');
+            const subjectId = document.getElementById('qbPDFSubjectSelect')?.value;
+            const unit = parseInt(document.getElementById('qbPDFUnit')?.value || '1');
+            const marks = parseInt(document.getElementById('qbPDFMarks')?.value || '2');
+            const difficulty = document.getElementById('qbPDFDifficulty')?.value || 'medium';
+
+            if (!fileInput || !fileInput.files[0]) {
+                showToast('Please select a PDF file', 'warning');
+                return;
+            }
+            if (!subjectId) {
+                showToast('Please select a target subject', 'warning');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            showToast('Reading PDF... please wait', 'info', 3000);
+
+            try {
+                if (window.pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
+                } else {
+                    throw new Error('PDF library not loaded');
+                }
+
+                const arrayBuffer = await file.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                const pdf = await pdfjsLib.getDocument({ 
+                    data: uint8Array,
+                    disableAutoFetch: true,
+                    disableStream: true
+                }).promise;
+                
+                let extractedLines = [];
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const linesMap = {};
+                    
+                    textContent.items.forEach(item => {
+                        const y = Math.round(item.transform[5]);
+                        if (!linesMap[y]) linesMap[y] = [];
+                        linesMap[y].push(item);
+                    });
+
+                    const sortedY = Object.keys(linesMap).sort((a, b) => b - a);
+                    sortedY.forEach(y => {
+                        const lineItems = linesMap[y].sort((a, b) => a.transform[4] - b.transform[4]);
+                        const lineText = lineItems.map(item => item.str).join(' ').trim();
+                        if (lineText.length > 5) {
+                            extractedLines.push(lineText);
+                        }
+                    });
+                }
+
+                if (extractedLines.length === 0) {
+                    showToast('Could not extract text from PDF.', 'warning');
+                    return;
+                }
+
+                window.showLoadingMessage(`Saving questions to Firestore...`);
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const line of extractedLines) {
+                    // Clean up and filter
+                    const cleaned = line.replace(/^[\d\.\-\*\)Q]+\s*/i, '').trim();
+                    if (cleaned.length > 8 && !/^(page|date|subject|exam|time|marks|unit)/i.test(cleaned)) {
+                        try {
+                            await addDoc(collection(window.db, 'questions'), {
+                                subjectId: subjectId,
+                                unit: unit,
+                                marks: marks,
+                                difficulty: difficulty,
+                                text: cleaned,
+                                createdAt: new Date().toISOString(),
+                                createdBy: window.currentUser.email
+                            });
+                            successCount++;
+                        } catch (err) {
+                            errorCount++;
+                        }
+                    }
+                }
+
+                window.hideLoadingMessage();
+                if (successCount > 0) {
+                    showToast(`Successfully imported ${successCount} questions!`, 'success');
+                    await logAuditEvent('BULK_IMPORT_QUESTIONS_PDF', { subjectId, successCount, errorCount });
+                    loadQuestions();
+                } else {
+                    showToast('No valid questions found in PDF.', 'warning');
+                }
+                fileInput.value = '';
+            } catch (error) {
+                if (typeof window.hideLoadingMessage === 'function') window.hideLoadingMessage();
+                console.error('PDF Import error:', error);
+                showToast('Failed to import PDF: ' + error.message, 'danger');
+            }
+        }
 
         /**
          * Load and display questions
@@ -6832,24 +6961,27 @@ Save All Students (${studentsSnap.size} students)
                     constraints.push(where('unit', '==', parseInt(filterUnit)));
                 }
 
-                const snapshot = await getDocs(query(q, ...constraints, orderBy('unit'), orderBy('createdAt', 'desc')));
+                const snapshot = await getDocs(query(q, ...constraints));
+                let questions = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                // Sort by createdAt descending in JS to avoid composite index requirements
+                questions.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
-                if (snapshot.empty) {
+                if (questions.length === 0) {
                     container.innerHTML = '<div class="alert alert-info">No questions found. Add questions to get started.</div>';
                     return;
                 }
 
                 let html = '<table><thead><tr><th>Unit</th><th>Marks</th><th>Difficulty</th><th>Question</th><th>Action</th></tr></thead><tbody>';
 
-                snapshot.forEach(doc => {
-                    const q = doc.data();
+                questions.forEach(q => {
                     html += `
                  <tr>
                      <td>Unit ${q.unit}</td>
                      <td>${q.marks}M</td>
                      <td><span class="badge ${q.difficulty === 'easy' ? 'badge-success' : q.difficulty === 'hard' ? 'badge-danger' : 'badge-warning'}">${q.difficulty}</span></td>
                      <td style="max-width:400px;">${q.text}</td>
-                     <td><button class="btn btn-danger btn-sm" onclick="deleteQuestion('${doc.id}')">Delete</button></td>
+                     <td><button class="btn btn-danger btn-sm" onclick="deleteQuestion('${q.id}')">Delete</button></td>
                  </tr>
              `;
                 });
@@ -6934,7 +7066,7 @@ Save All Students (${studentsSnap.size} students)
          * Load teachers for a subject for distribution
          */
         async function loadTeachersForDistribution() {
-            const subjectId = document.getElementById('distSubject').value;
+            const subjectId = document.getElementById('qDistSubject')?.value;
             const container = document.getElementById('distTeachersList');
 
             if (!subjectId) {
@@ -6953,9 +7085,17 @@ Save All Students (${studentsSnap.size} students)
                 }
 
                 const teachers = [...new Set(snapshot.docs.map(d => d.data().teacherEmail))];
-                container.innerHTML = `<div style="color:#065f46;font-weight:600;margin-bottom:6px;">${teachers.length} teacher(s) will receive questions:</div>` +
-                    teachers.map(t => `<div style="padding:3px 0;color:#374151;">✓ ${t}</div>`).join('') +
-                    `<div style="color:#6b7280;font-size:12px;margin-top:6px;">Each teacher gets: ${document.getElementById('distUnits')?.value || '?'} units × ${document.getElementById('distQuestionsPerUnit')?.value || '?'} questions = <strong>${(parseInt(document.getElementById('distUnits')?.value || 0) * parseInt(document.getElementById('distQuestionsPerUnit')?.value || 0)) || '?'} questions each</strong></div>`;
+                const unitsV = document.getElementById('qDistUnits')?.value || '0';
+                const qpuV = document.getElementById('qDistQuestionsPerUnit')?.value || '0';
+                const totalQ = parseInt(unitsV) * parseInt(qpuV);
+
+                container.innerHTML = `<div style="color:#065f46;font-weight:600;margin-bottom:8px;">Select teachers to receive questions:</div>` +
+                    teachers.map(t => `
+                        <div style="display:flex;align-items:center;gap:10px;padding:6px;border-bottom:1px solid #e5e7eb;">
+                            <input type="checkbox" id="teacher_${t}" value="${t}" checked style="width:18px;height:18px;">
+                            <label for="teacher_${t}" style="font-size:14px;color:#374151;cursor:pointer;flex:1;">${t}</label>
+                        </div>`).join('') +
+                    `<div style="color:#6b7280;font-size:12px;margin-top:10px;">Each selected teacher will receive <strong>${totalQ || '?'} questions</strong> (~${qpuV} per unit).</div>`;
 
             } catch (error) {
                 console.error('Error loading teachers:', error);
@@ -6963,65 +7103,71 @@ Save All Students (${studentsSnap.size} students)
             }
         }
 
+        async function getTeacherAssignedQuestions(email, subjectId, date) {
+            try {
+                const docSnap = await window.getDoc(window.doc(window.db, 'teacher_question_assignments', `${subjectId}_${email}_${date}`));
+                if (docSnap.exists()) {
+                    return docSnap.data().questions || [];
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching teacher questions:', error);
+                return [];
+            }
+        }
+        window.getTeacherAssignedQuestions = getTeacherAssignedQuestions;
+
         /**
          * Distribute questions to teachers
          */
-        async function distributeQuestions() {
-            const subjectId = document.getElementById('distSubject').value;
-            const date = document.getElementById('distDate').value;
-            const unitsRaw = document.getElementById('distUnits').value;
-            const qpuRaw = document.getElementById('distQuestionsPerUnit').value;
-            const marksRaw = document.getElementById('distMarks').value;
-            const units = parseInt(unitsRaw);
-            const questionsPerUnit = parseInt(qpuRaw);
-            const marksType = parseInt(marksRaw) || 2;
+        async function executeQuestionMigrationAndDistribution() {
+            const subjectEl = document.getElementById('qDistSubject');
+            const unitsEl = document.getElementById('qDistUnits');
+            const qpuEl = document.getElementById('qDistQuestionsPerUnit');
+            const marksEl = document.getElementById('qDistMarks');
+            
+            if (!subjectEl || !unitsEl || !qpuEl || !marksEl) {
+                const missing = [];
+                if (!subjectEl) missing.push('qDistSubject');
+                if (!unitsEl) missing.push('qDistUnits');
+                if (!qpuEl) missing.push('qDistQuestionsPerUnit');
+                if (!marksEl) missing.push('qDistMarks');
+                console.error('Missing form elements:', missing.join(', '));
+                showToast('Form structure error. Please refresh.', 'danger');
+                return;
+            }
 
-            if (!subjectId) { showToast('Please select a subject', 'danger'); return; }
-            if (!date) { showToast('Please select an assignment date', 'danger'); return; }
-            if (isNaN(units) || units < 1 || units > 10) { showToast('Units must be between 1 and 10', 'danger'); return; }
-            if (isNaN(questionsPerUnit) || questionsPerUnit < 1 || questionsPerUnit > 20) { showToast('Questions per unit must be between 1 and 20', 'danger'); return; }
-
-            const btn = document.querySelector('button[onclick="distributeQuestions()"]');
-            if (btn) { btn.disabled = true; btn.textContent = 'Distributing...'; }
-
+            const subjectId = subjectEl.value;
+            const units = parseInt(unitsEl.value);
+            const questionsPerUnit = parseInt(qpuEl.value);
+            const marksType = marksEl.value;
+            const assignmentDate = document.getElementById('qDistDate')?.value || new Date().toISOString().split('T')[0];
+            
+            if (!subjectId) { showToast('Please select a subject', 'warning'); return; }
+            
+            const listEl = document.getElementById('distTeachersList');
+            const teacherChecks = listEl ? listEl.querySelectorAll('input[type="checkbox"]:checked') : [];
+            const teachers = Array.from(teacherChecks).map(cb => cb.value);
+            
+            if (teachers.length === 0) { showToast('Please select at least one teacher', 'warning'); return; }
+            
             try {
-                const teacherSnapshot = await getDocs(
-                    query(collection(window.db, 'teacher_assignments'), where('subjectId', '==', subjectId))
-                );
-
-                if (teacherSnapshot.empty) {
-                    showToast('No teachers assigned to this subject. Please assign teachers first.', 'warning');
-                    return;
-                }
-
-                const teachers = [...new Set(teacherSnapshot.docs.map(d => d.data().teacherEmail))];
-
-                showToast(
-                    `Generating ${units} units × ${questionsPerUnit} questions = ${units * questionsPerUnit} questions per teacher for ${teachers.length} teacher(s)...`,
-                    'info', 4000
-                );
-
-                const result = await generateAndDistributeQuestions({
-                    subjectId, units, questionsPerUnit, teachers, marksType, assignmentDate: date
+                window.showLoadingMessage('Distributing questions...');
+                const result = await window.generateAndDistributeQuestions({
+                    subjectId, units, questionsPerUnit, teachers, marksType, assignmentDate
                 });
-
+                window.hideLoadingMessage();
                 if (result) {
-                    const counts = Object.entries(result).map(([e, qs]) => `${e.split('@')[0]}: ${qs.length}`);
-                    showToast(`Distribution complete!\n${counts.join(', ')}`, 'success', 6000);
-                    loadDistributionHistory();
+                    showToast(`Questions distributed successfully to ${teachers.length} teachers`, 'success');
+                    if (typeof loadDistributionHistory === 'function') loadDistributionHistory();
                 }
-
-            } catch (error) {
-                console.error('Error distributing questions:', error);
-                showToast('Distribution failed: ' + error.message, 'danger');
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '🚀 Generate & Distribute Questions'; }
+            } catch (err) {
+                window.hideLoadingMessage();
+                showToast('Distribution failed: ' + err.message, 'danger');
             }
         }
+        window.executeQuestionMigrationAndDistribution = executeQuestionMigrationAndDistribution;
 
-        /**
-         * Load distribution history
-         */
         async function loadDistributionHistory() {
             const subjectId = document.getElementById('historySubject')?.value;
             const container = document.getElementById('distributionHistory');
@@ -7034,35 +7180,38 @@ Save All Students (${studentsSnap.size} students)
             }
 
             try {
-                const snapshot = await getDocs(
-                    query(
-                        collection(window.db, 'teacher_question_assignments'),
-                        where('subjectId', '==', subjectId),
-                        orderBy('assignedAt', 'desc'),
-                        limit(50)
-                    )
-                );
+                // Avoid composite-index requirements by sorting client-side.
+                const snapshot = await getDocs(query(
+                    collection(window.db, 'teacher_question_assignments'),
+                    where('subjectId', '==', subjectId),
+                    limit(200)
+                ));
 
                 if (snapshot.empty) {
                     container.innerHTML = '<div class="alert alert-info">No distribution history found</div>';
                     return;
                 }
 
-                let html = '<table><thead><tr><th>Date</th><th>Teacher</th><th>Questions</th><th>Units × Per Unit</th><th>Marks</th><th>Assigned At</th></tr></thead><tbody>';
+                const rows = snapshot.docs
+                    .map(d => d.data())
+                    .sort((a, b) => String(b.assignedAt || '').localeCompare(String(a.assignedAt || '')))
+                    .slice(0, 50);
 
-                snapshot.forEach(d_snap => {
-                    const d = d_snap.data();
+                let html = '<table><thead><tr><th>Date</th><th>Teacher</th><th>Questions</th><th>Structure</th><th>Marks</th><th>Assigned At</th></tr></thead><tbody>';
+
+                rows.forEach(d => {
+                    const qCount = d.totalQuestions !== undefined ? d.totalQuestions : (d.questions ? d.questions.length : 0);
                     const structureInfo = (d.units && d.questionsPerUnit)
-                        ? `${d.units} units × ${d.questionsPerUnit}`
-                        : '—';
+                        ? `${d.units} units x ${d.questionsPerUnit}`
+                        : 'N/A';
                     html += `
                  <tr>
-                     <td><strong>${d.assignmentDate || '—'}</strong></td>
-                     <td>${d.teacherEmail || '—'}</td>
-                     <td><span class="badge badge-success">${d.totalQuestions || 0}</span></td>
+                     <td><strong>${d.assignmentDate || 'N/A'}</strong></td>
+                     <td>${d.teacherEmail || 'N/A'}</td>
+                     <td><span class="badge badge-success">${qCount}</span></td>
                      <td>${structureInfo}</td>
-                     <td>${d.marksType ? d.marksType + 'M' : '—'}</td>
-                     <td style="font-size:12px;">${d.assignedAt ? new Date(d.assignedAt).toLocaleString() : '—'}</td>
+                     <td>${d.marksType ? d.marksType + 'M' : 'N/A'}</td>
+                     <td style="font-size:12px;">${d.assignedAt ? new Date(d.assignedAt).toLocaleString() : 'N/A'}</td>
                  </tr>
              `;
                 });
@@ -7105,9 +7254,9 @@ Save All Students (${studentsSnap.size} students)
                         collection(window.db, 'teacher_question_assignments'),
                         where('subjectId', '==', subjectId),
                         where('teacherEmail', '==', window.currentUser.email),
-                        orderBy('assignmentDate', 'desc')
+                        limit(200)
                     ));
-                    dates = [...new Set(snap.docs.map(d => d.data().assignmentDate).filter(Boolean))];
+                    dates = [...new Set(snap.docs.map(d => d.data().assignmentDate).filter(Boolean))].sort().reverse();
                 }
 
                 if (dates.length === 0) {
@@ -7171,7 +7320,7 @@ Save All Students (${studentsSnap.size} students)
                         const diffColor = q.difficulty === 'easy' ? '#16a34a' : q.difficulty === 'hard' ? '#dc2626' : '#d97706';
                         html += `<tr>
                      <td style="color:#9ca3af;">${i + 1}</td>
-                     <td style="font-size:14px;line-height:1.5;">${q.text || '—'}</td>
+                     <td style="font-size:14px;line-height:1.5;">${q.text || 'No description available'}</td>
                      <td><span style="background:${diffColor};color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">${q.difficulty || 'medium'}</span></td>
                  </tr>`;
                     });
@@ -7217,6 +7366,106 @@ Save All Students (${studentsSnap.size} students)
                 showToast('Failed to export questions', 'danger');
             }
         }
+
+        async function exportTeacherAssignedQuestionsToPDF() {
+            const subjectId = document.getElementById('teacherQuestionsSubject')?.value;
+            const date = document.getElementById('teacherQuestionsDate')?.value;
+            const subjectSelect = document.getElementById('teacherQuestionsSubject');
+            const subjectName = subjectSelect?.options[subjectSelect.selectedIndex]?.text || subjectId;
+
+            if (!subjectId || !date) {
+                showToast('Please select both subject and date', 'warning');
+                return;
+            }
+
+            try {
+                window.showLoadingMessage('Generating Assignment PDF...');
+                const questions = await getTeacherAssignedQuestions(window.currentUser.email, subjectId, date);
+
+                if (questions.length === 0) {
+                    showToast('No questions to export', 'warning');
+                    window.hideLoadingMessage();
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                let y = drawPDFHeader(doc, 
+                    `Department of ${window.currentUser.department || 'Academic Affairs'}`, 
+                    'QUESTION ASSIGNMENT (FACULTY COPY)', 
+                    [
+                        `Subject: ${subjectName.toUpperCase()} | Date: ${date}`,
+                        `Faculty: ${window.currentUser.name || window.currentUser.email}`
+                    ]
+                );
+
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text(`TOTAL QUESTIONS: ${questions.length}`, 15, y);
+                y += 8;
+
+                // QUESTIONS - 3 per page as requested
+                questions.forEach((q, i) => {
+                    // Page break every 3 questions
+                    if (i > 0 && i % 3 === 0) {
+                        doc.addPage();
+                        // Minimal header on new pages
+                        doc.setFontSize(9);
+                        doc.setTextColor(100, 116, 139);
+                        doc.text('MIT ADT UNIVERSITY - QUESTION ASSIGNMENT', 105, 10, { align: 'center' });
+                        doc.text(`Subject: ${subjectName} | Date: ${date}`, 105, 15, { align: 'center' });
+                        doc.line(15, 17, 195, 17);
+                        y = 25;
+                    }
+
+                    // Question Box
+                    doc.setDrawColor(229, 231, 235);
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(15, y, 180, 55, 'F');
+                    doc.rect(15, y, 180, 55, 'S');
+
+                    // Question Number
+                    doc.setTextColor(30, 58, 138);
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`QUESTION ${i + 1}`, 20, y + 8);
+
+                    // Metadata (Unit/Marks)
+                    doc.setFontSize(9);
+                    doc.setTextColor(107, 114, 128);
+                    doc.text(`Unit: ${q.unit} | Marks: ${q.marks}M | Difficulty: ${q.difficulty || 'medium'}`, 20, y + 14);
+
+                    // Text
+                    doc.setTextColor(31, 41, 55);
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'normal');
+                    const splitText = doc.splitTextToSize(q.text || 'No question text provided.', 170);
+                    doc.text(splitText, 20, y + 22);
+
+                    y += 65; // Move to next question slot
+                });
+
+                // FOOTER
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text(`Page ${i} of ${pageCount} | Generated on ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
+                }
+
+                doc.save(`Assignment_${subjectId}_${date}.pdf`);
+                showToast('Assignment PDF downloaded successfully', 'success');
+                window.hideLoadingMessage();
+            } catch (error) {
+                console.error('Error generating assignments PDF:', error);
+                showToast('Failed to generate PDF', 'danger');
+                window.hideLoadingMessage();
+            }
+        }
+        window.exportTeacherAssignedQuestionsToPDF = exportTeacherAssignedQuestionsToPDF;
+
 
         // Make functions globally available
 
@@ -7299,9 +7548,10 @@ Save All Students (${studentsSnap.size} students)
             }).catch(e => showToast('Export failed: ' + e.message, 'danger'));
         }
 
-        function exportResultsExcel() {
+        async function exportResultsExcel() {
             const examId = document.getElementById('resultsExam')?.value || document.getElementById('teacherResultsExam')?.value || '';
             if (!examId) { showToast('Please select an exam first', 'warning'); return; }
+
             window.getDocs(window.query(window.collection(window.db, 'results'), window.where('examId', '==', examId)))
                 .then(snap => {
                     if (snap.empty) { showToast('No results to export', 'warning'); return; }
@@ -7314,49 +7564,190 @@ Save All Students (${studentsSnap.size} students)
                 }).catch(e => showToast('Export failed: ' + e.message, 'danger'));
         }
 
+        async function exportResultsPDF() {
+            const examId = document.getElementById('resultsExam')?.value || document.getElementById('teacherResultsExam')?.value || '';
+            if (!examId) { showToast('Please select an exam first', 'warning'); return; }
+
+            try {
+                window.showLoadingMessage('Generating Marksheet PDF...');
+                const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
+                if (!examDoc.exists()) { showToast('Exam not found', 'danger'); return; }
+                const exam = examDoc.data();
+
+                const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', exam.subjectId));
+                const subject = subjectDoc.exists() ? subjectDoc.data() : {};
+
+                const resultsSnap = await window.getDocs(window.query(window.collection(window.db, 'results'), window.where('examId', '==', examId)));
+                if (resultsSnap.empty) { showToast('No results available to export', 'warning'); window.hideLoadingMessage(); return; }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                let y = drawPDFHeader(doc, 
+                    `Department of ${window.currentUser.department || 'Academic Affairs'}`, 
+                    'OFFICIAL EXAMINATION MARKSHEET', 
+                    [
+                        `Subject: ${subject.name || 'N/A'} (${subject.code || '-'})`,
+                        `Exam: ${exam.name} | Year: ${exam.academicYear} | Sem: ${exam.semester}`,
+                        `Max Marks: ${exam.totalMarks} | Generated: ${new Date().toLocaleDateString()}`
+                    ]
+                );
+                
+                y += 5;
+
+                // TABLE HEADER
+                y = 75;
+                doc.setFillColor(37, 99, 235);
+                doc.rect(15, y, 180, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont(undefined, 'bold');
+                doc.text('Sr.', 18, y + 7);
+                doc.text('Student Name', 30, y + 7);
+                doc.text('Enrollment', 100, y + 7);
+                doc.text('Marks', 160, y + 7);
+                doc.text('Grade', 180, y + 7);
+
+                // TABLE ROWS
+                doc.setTextColor(31, 41, 55);
+                doc.setFont(undefined, 'normal');
+                y += 10;
+
+                const results = resultsSnap.docs.map(d => d.data()).sort((a, b) => (a.enrollment || '').localeCompare(b.enrollment || ''));
+
+                results.forEach((r, i) => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    if (i % 2 === 0) {
+                        doc.setFillColor(243, 244, 246);
+                        doc.rect(15, y, 180, 8, 'F');
+                    }
+                    doc.text((i + 1).toString(), 18, y + 6);
+                    doc.text((r.studentName || 'N/A').substring(0, 30), 30, y + 6);
+                    doc.text(r.enrollment || '-', 100, y + 6);
+                    doc.text(`${r.totalMarks}/${r.maxMarks}`, 160, y + 6);
+                    doc.text(r.grade || '-', 180, y + 6);
+                    y += 8;
+                });
+
+                doc.save(`Marksheet_${subject.code}_${exam.name.replace(/\s+/g, '_')}.pdf`);
+                showToast('Marksheet PDF downloaded successfully', 'success');
+                window.hideLoadingMessage();
+            } catch (err) {
+                console.error(err);
+                showToast('PDF Export failed: ' + err.message, 'danger');
+                window.hideLoadingMessage();
+            }
+        }
+        window.exportResultsPDF = exportResultsPDF;
+
         async function importResultsFromExcel() {
             const examId = document.getElementById('importExamSelect').value;
             const fileInput = document.getElementById('resultsExcelFile');
             if (!examId) { showToast('Please select an exam first', 'danger'); return; }
             if (!fileInput.files || !fileInput.files[0]) { showToast('Please select an Excel file', 'danger'); return; }
             const file = fileInput.files[0];
-            if (!file.name.match(/\.(xlsx|xls)$/i)) { showToast('Please select a valid Excel file', 'danger'); return; }
             try {
                 const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
                 if (!examDoc.exists()) { showToast('Exam not found', 'danger'); return; }
                 const examData = examDoc.data();
-                if (examData.status === 'FINALIZED') { showToast('Cannot import for finalized exams', 'danger'); return; }
+                const isCOBased = (examData.examType === 'ca' || examData.examType === 'ese');
+
                 await importFromExcel(file, async (rows) => {
                     let ok = 0, fail = 0;
                     for (const row of rows) {
-                        const enrollment = String(row['Enrollment'] || row['enrollment'] || row[Object.keys(row)[0]] || '').trim();
-                        if (!enrollment) { fail++; continue; }
-                        const studentSnap = await window.getDocs(window.query(window.collection(window.db, 'students'), window.where('enrollment', '==', enrollment)));
-                        if (studentSnap.empty) { fail++; continue; }
-                        const studentDoc = studentSnap.docs[0];
-                        const marks = [];
-                        if (examData.examType === 'standard' && examData.criteria) {
-                            for (let j = 0; j < examData.criteria.length; j++) {
-                                const v = row[`Mark${j + 1}`] ?? row[examData.criteria[j].name] ?? null;
-                                marks.push(v !== null && v !== '' ? parseFloat(v) : null);
+                        try {
+                            const enrollment = String(row['Enrollment'] || row['enrollment'] || row['PRN'] || row[Object.keys(row)[0]] || '').trim();
+                            if (!enrollment) { fail++; continue; }
+
+                            const studentSnap = await window.getDocs(window.query(window.collection(window.db, 'students'), window.where('enrollment', '==', enrollment)));
+                            if (studentSnap.empty) {
+                                console.warn(`Student with enrollment ${enrollment} not found in database.`);
+                                fail++; continue;
                             }
+                            const studentDoc = studentSnap.docs[0];
+                            const studentData = studentDoc.data();
+
+                            let totalValue = 0;
+                            const coMarks = {};
+                            const marks = [];
+                            let allFilled = true;
+
+                            if (isCOBased) {
+                                (examData.courseOutcomes || []).forEach((co, coIdx) => {
+                                    (co.criteria || []).forEach((c, cIdx) => {
+                                        const key = `${co.name}_C${cIdx + 1}`;
+                                        const val = row[key] ?? row[key.toLowerCase()] ?? null;
+                                        if (val !== null && val !== '') {
+                                            const m = parseFloat(val);
+                                            coMarks[key] = m;
+                                            totalValue += m;
+                                        } else {
+                                            coMarks[key] = null;
+                                            allFilled = false;
+                                        }
+                                    });
+                                });
+                            } else {
+                                (examData.criteria || []).forEach((criterion, idx) => {
+                                    const colName = `Mark${idx + 1}`;
+                                    const val = row[colName] ?? row[criterion.name] ?? null;
+                                    if (val !== null && val !== '') {
+                                        const m = parseFloat(val);
+                                        marks.push(m);
+                                        totalValue += m;
+                                    } else {
+                                        marks.push(null);
+                                        allFilled = false;
+                                    }
+                                });
+                            }
+
+                            const isAbsentVal = String(row['Absent'] || row['absent'] || row['Status'] || '').toUpperCase();
+                            const isAbsent = isAbsentVal === 'AB' || isAbsentVal === 'ABSENT' || isAbsentVal === 'A';
+
+                            const resultData = {
+                                examId, studentId: studentDoc.id, enrollment,
+                                studentName: sanitizeString(studentData.name || ''),
+                                marks, coMarks,
+                                coAttainment: (examData.examType === 'ca' || examData.examType === 'ese') ? [] : [], // Will be recalculated on load if needed
+                                totalMarks: isAbsent ? -1 : totalValue,
+                                maxMarks: (examData.examType === 'ca' || examData.examType === 'ese') ? Math.round(examData.totalMarks / (examData.courseOutcomes?.length || 1)) : examData.totalMarks,
+                                percentage: isAbsent ? 'AB' : (examData.totalMarks ? Math.round((totalValue / examData.totalMarks) * 100) : 0),
+                                status: isAbsent ? 'ABSENT' : (allFilled ? 'COMPLETE' : 'INCOMPLETE'),
+                                grade: isAbsent ? 'AB' : calculateGrade(examData.totalMarks ? (totalValue / examData.totalMarks) * 100 : 0),
+                                division: studentData.division || examData.division || '',
+                                batch: studentData.batch || studentData.division || '',
+                                academicYear: examData.academicYear || '',
+                                semester: examData.semester || '',
+                                importedAt: new Date().toISOString(),
+                                evaluatedBy: window.currentUser.uid,
+                                lifecycleState: 'DRAFT',
+                                absent: isAbsent
+                            };
+
+                            const existing = await window.getDocs(window.query(window.collection(window.db, 'results'), 
+                                window.where('examId', '==', examId), window.where('studentId', '==', studentDoc.id)));
+                            
+                            if (!existing.empty) {
+                                await window.updateDoc(window.doc(window.db, 'results', existing.docs[0].id), resultData);
+                            } else {
+                                await window.addDoc(window.collection(window.db, 'results'), resultData);
+                            }
+                            ok++;
+                        } catch (rowErr) {
+                            console.error('Error processing row:', rowErr);
+                            fail++;
                         }
-                        const total = marks.reduce((s, m) => s + (m !== null ? m : 0), 0);
-                        const pct = examData.totalMarks ? (total / examData.totalMarks) * 100 : 0;
-                        const resultData = { examId, studentId: studentDoc.id, enrollment, studentName: studentDoc.data().name || '', marks, totalMarks: total, percentage: Math.round(pct * 100) / 100, grade: calculateGrade(pct), status: marks.some(m => m === null) ? 'INCOMPLETE' : 'COMPLETE', importedAt: new Date().toISOString(), importedBy: window.currentUser?.uid || '' };
-                        const existing = await window.getDocs(window.query(window.collection(window.db, 'results'), window.where('examId', '==', examId), window.where('studentId', '==', studentDoc.id)));
-                        if (!existing.empty) {
-                            await window.updateDoc(window.doc(window.db, 'results', existing.docs[0].id), resultData);
-                        } else {
-                            await window.addDoc(window.collection(window.db, 'results'), resultData);
-                        }
-                        ok++;
                     }
-                    showToast(`Imported ${ok} results. ${fail} skipped.`, ok > 0 ? 'success' : 'warning');
-                    if (ok > 0) { logAuditEvent('IMPORT_RESULTS', { examId, successCount: ok, failCount: fail }); }
-                }, true);
+                    showToast(`Import completed: ${ok} succeeded, ${fail} skipped due to mismatch.`, ok > 0 ? 'success' : 'warning');
+                });
                 fileInput.value = '';
-            } catch (e) { console.error(e); showToast('Import failed: ' + e.message, 'danger'); }
+            } catch (e) {
+                console.error(e);
+                showToast('Import sequence failed: ' + e.message, 'danger');
+            }
         }
 
         async function importCoordinatorResultsFromExcel() {
@@ -7365,53 +7756,120 @@ Save All Students (${studentsSnap.size} students)
             if (!examId) { showToast('Please select an exam first', 'danger'); return; }
             if (!fileInput.files || !fileInput.files[0]) { showToast('Please select an Excel file', 'danger'); return; }
             const file = fileInput.files[0];
-            if (!file.name.match(/\.(xlsx|xls)$/i)) { showToast('Please select a valid Excel file', 'danger'); return; }
             try {
                 const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
                 if (!examDoc.exists()) { showToast('Exam not found', 'danger'); return; }
                 const examData = examDoc.data();
-                if (examData.status === 'FINALIZED') { showToast('Cannot import for finalized exams', 'danger'); return; }
+                const isCOBased = (examData.examType === 'ca' || examData.examType === 'ese');
+
                 await importFromExcel(file, async (rows) => {
                     let ok = 0, fail = 0;
                     for (const row of rows) {
-                        const enrollment = String(row['Enrollment'] || row['enrollment'] || row[Object.keys(row)[0]] || '').trim();
-                        if (!enrollment) { fail++; continue; }
-                        const studentSnap = await window.getDocs(window.query(window.collection(window.db, 'students'), window.where('enrollment', '==', enrollment)));
-                        if (studentSnap.empty) { fail++; continue; }
-                        const studentDoc = studentSnap.docs[0];
-                        const marks = [];
-                        if (examData.examType === 'standard' && examData.criteria) {
-                            for (let j = 0; j < examData.criteria.length; j++) {
-                                const v = row[`Mark${j + 1}`] ?? row[examData.criteria[j].name] ?? null;
-                                marks.push(v !== null && v !== '' ? parseFloat(v) : null);
+                        try {
+                            const enrollment = String(row['Enrollment'] || row['enrollment'] || row['PRN'] || row[Object.keys(row)[0]] || '').trim();
+                            if (!enrollment) { fail++; continue; }
+
+                            const studentSnap = await window.getDocs(window.query(window.collection(window.db, 'students'), window.where('enrollment', '==', enrollment)));
+                            if (studentSnap.empty) {
+                                console.warn(`Student with enrollment ${enrollment} not found in database.`);
+                                fail++; continue;
                             }
+                            const studentDoc = studentSnap.docs[0];
+                            const studentData = studentDoc.data();
+
+                            let totalValue = 0;
+                            const coMarks = {};
+                            const marks = [];
+                            let allFilled = true;
+
+                            if (isCOBased) {
+                                (examData.courseOutcomes || []).forEach((co, coIdx) => {
+                                    (co.criteria || []).forEach((c, cIdx) => {
+                                        const key = `${co.name}_C${cIdx + 1}`;
+                                        const val = row[key] ?? row[key.toLowerCase()] ?? null;
+                                        if (val !== null && val !== '') {
+                                            const m = parseFloat(val);
+                                            coMarks[key] = m;
+                                            totalValue += m;
+                                        } else {
+                                            coMarks[key] = null;
+                                            allFilled = false;
+                                        }
+                                    });
+                                });
+                            } else {
+                                (examData.criteria || []).forEach((criterion, idx) => {
+                                    const colName = `Mark${idx + 1}`;
+                                    const val = row[colName] ?? row[criterion.name] ?? null;
+                                    if (val !== null && val !== '') {
+                                        const m = parseFloat(val);
+                                        marks.push(m);
+                                        totalValue += m;
+                                    } else {
+                                        marks.push(null);
+                                        allFilled = false;
+                                    }
+                                });
+                            }
+
+                            const isAbsentVal = String(row['Absent'] || row['absent'] || row['Status'] || '').toUpperCase();
+                            const isAbsent = isAbsentVal === 'AB' || isAbsentVal === 'ABSENT' || isAbsentVal === 'A';
+
+                            const resultData = {
+                                examId, studentId: studentDoc.id, enrollment,
+                                studentName: sanitizeString(studentData.name || ''),
+                                marks, coMarks,
+                                coAttainment: (examData.examType === 'ca' || examData.examType === 'ese') ? [] : [],
+                                totalMarks: isAbsent ? -1 : totalValue,
+                                maxMarks: (examData.examType === 'ca' || examData.examType === 'ese') ? Math.round(examData.totalMarks / (examData.courseOutcomes?.length || 1)) : examData.totalMarks,
+                                percentage: isAbsent ? 'AB' : (examData.totalMarks ? Math.round((totalValue / examData.totalMarks) * 100) : 0),
+                                status: isAbsent ? 'ABSENT' : (allFilled ? 'COMPLETE' : 'INCOMPLETE'),
+                                grade: isAbsent ? 'AB' : calculateGrade(examData.totalMarks ? (totalValue / examData.totalMarks) * 100 : 0),
+                                division: studentData.division || examData.division || '',
+                                batch: studentData.batch || studentData.division || '',
+                                academicYear: examData.academicYear || '',
+                                semester: examData.semester || '',
+                                importedAt: new Date().toISOString(),
+                                evaluatedBy: window.currentUser.uid,
+                                lifecycleState: 'DRAFT',
+                                isCoordinatorImport: true,
+                                absent: isAbsent
+                            };
+
+                            const existing = await window.getDocs(window.query(window.collection(window.db, 'results'), 
+                                window.where('examId', '==', examId), window.where('studentId', '==', studentDoc.id)));
+                            
+                            if (!existing.empty) {
+                                await window.updateDoc(window.doc(window.db, 'results', existing.docs[0].id), resultData);
+                            } else {
+                                await window.addDoc(window.collection(window.db, 'results'), resultData);
+                            }
+                            ok++;
+                        } catch (rowErr) {
+                            console.error('Error processing row:', rowErr);
+                            fail++;
                         }
-                        const total = marks.reduce((s, m) => s + (m !== null ? m : 0), 0);
-                        const pct = examData.totalMarks ? (total / examData.totalMarks) * 100 : 0;
-                        const resultData = { examId, studentId: studentDoc.id, enrollment, studentName: studentDoc.data().name || '', marks, totalMarks: total, percentage: Math.round(pct * 100) / 100, grade: calculateGrade(pct), status: marks.some(m => m === null) ? 'INCOMPLETE' : 'COMPLETE', importedAt: new Date().toISOString(), importedBy: window.currentUser?.uid || '' };
-                        const existing = await window.getDocs(window.query(window.collection(window.db, 'results'), window.where('examId', '==', examId), window.where('studentId', '==', studentDoc.id)));
-                        if (!existing.empty) {
-                            await window.updateDoc(window.doc(window.db, 'results', existing.docs[0].id), resultData);
-                        } else {
-                            await window.addDoc(window.collection(window.db, 'results'), resultData);
-                        }
-                        ok++;
                     }
-                    showToast(`Imported ${ok} results. ${fail} skipped.`, ok > 0 ? 'success' : 'warning');
+                    showToast(`Coordinator Import: ${ok} succeeded, ${fail} skipped.`, ok > 0 ? 'success' : 'warning');
                     if (ok > 0) { logAuditEvent('COORD_IMPORT_RESULTS', { examId, successCount: ok, failCount: fail }); }
-                }, true);
+                });
                 fileInput.value = '';
-            } catch (e) { console.error(e); showToast('Import failed: ' + e.message, 'danger'); }
+            } catch (e) {
+                console.error(e);
+                showToast('Coordinator Import failed: ' + e.message, 'danger');
+            }
         }
 
         window.addQuestion = addQuestion;
         window.downloadQuestionBankTemplate = downloadQuestionBankTemplate;
         window.importQuestionsFromExcel = importQuestionsFromExcel;
+        window.importQuestionsFromQB_PDF = importQuestionsFromQB_PDF;
+        window.importQuestionsFromPDF = importQuestionsFromPDF;
         window.loadQuestions = loadQuestions;
         window.deleteQuestion = deleteQuestion;
         window.exportQuestionsToExcel = exportQuestionsToExcel;
         window.loadTeachersForDistribution = loadTeachersForDistribution;
-        window.distributeQuestions = distributeQuestions;
+        window.executeQuestionMigrationAndDistribution = executeQuestionMigrationAndDistribution;
         window.loadDistributionHistory = loadDistributionHistory;
         window.loadTeacherQuestionDates = loadTeacherQuestionDates;
         window.loadTeacherAssignedQuestions = loadTeacherAssignedQuestions;
@@ -7458,15 +7916,7 @@ Save All Students (${studentsSnap.size} students)
         if (typeof window._flushToastQueue === 'function') window._flushToastQueue(showToast);
         window.__appReady = true;
 
-        // Render standalone portal notice if in local mode
-        if (window.__portalMode === 'local' && typeof window.renderPortalModeNotice === 'function') {
-            window.renderPortalModeNotice();
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
-            if (window.__portalMode === 'local' && typeof window.renderPortalModeNotice === 'function') {
-                window.renderPortalModeNotice();
-            }
             const loginBtn = document.getElementById('loginBtn');
             if (loginBtn) {
                 loginBtn.addEventListener('click', function (e) {
@@ -7538,3 +7988,507 @@ Save All Students (${studentsSnap.size} students)
                 }
             });
         });
+
+        window.printAllMarksheets = async function() {
+            const examId = document.getElementById("teacherResultsExam")?.value || document.getElementById("teacherExamSelect")?.value;
+            if (!examId) {
+                showToast("Please select an exam first", "warning");
+                return;
+            }
+
+            try {
+                showToast("Generating marksheets...", "info");
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const examDoc = await window.getDoc(window.doc(window.db, "exams", examId));
+                const examData = examDoc.data();
+                
+                const subjectDoc = await window.getDoc(window.doc(window.db, "subjects", examData.subjectId));
+                const subjectData = subjectDoc.data();
+
+                const resultsSnap = await window.getDocs(window.query(
+                    window.collection(window.db, "results"),
+                    window.where("examId", "==", examId)
+                ));
+
+                if (resultsSnap.empty) {
+                    showToast("No results found to print", "warning");
+                    return;
+                }
+
+                let studentIndex = 0;
+                for (const resultDoc of resultsSnap.docs) {
+                    const result = resultDoc.data();
+                    if (studentIndex > 0) doc.addPage();
+
+                    // --- PROFESSIONAL HEADER ---
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text("MIT ADT UNIVERSITY, RAJBAUG, PUNE", 105, 12, { align: "center" });
+                    
+                    doc.setFontSize(10);
+                    doc.text(`Department of ${window.currentUser.department || 'Academic Affairs'}`, 105, 18, { align: "center" });
+                    
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text("OFFICIAL STUDENT MARKSHEET", 105, 23, { align: "center" });
+                    doc.line(20, 25, 190, 25);
+
+                    doc.setTextColor(33, 37, 41);
+                    doc.setFontSize(18);
+                    doc.setFont(undefined, "bold");
+                    doc.text("STUDENT PROGRESS REPORT", 105, 30, { align: "center" });
+                    
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, "normal");
+                    doc.text("Departmental Internal Assessment Record", 105, 36, { align: "center" });
+                    doc.line(20, 40, 190, 40);
+
+                    // --- STUDENT INFO BOX ---
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(20, 45, 170, 35, 'F');
+                    doc.setDrawColor(226, 232, 240);
+                    doc.rect(20, 45, 170, 35, 'S');
+
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text("STUDENT NAME", 25, 52);
+                    doc.text("ENROLLMENT NO", 25, 65);
+                    doc.text("SUBJECT NAME", 105, 52);
+                    doc.text("EXAM NAME", 105, 65);
+
+                    doc.setFontSize(11);
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFont(undefined, "bold");
+                    doc.text(result.studentName.toUpperCase(), 25, 58);
+                    doc.text(result.enrollment, 25, 71);
+                    doc.text(subjectData.name, 105, 58);
+                    doc.text(examData.name, 105, 71);
+
+                    // --- MARKS TABLE ---
+                    let y = 95;
+                    doc.setFontSize(12);
+                    doc.text("EVALUATION SUMMARY", 20, y);
+                    y += 5;
+                    doc.setDrawColor(30, 58, 138);
+                    doc.setLineWidth(0.5);
+                    doc.line(20, y, 190, y);
+                    y += 10;
+
+                    // Table Headers
+                    doc.setFontSize(10);
+                    doc.text("Course Outcome (CO)", 25, y);
+                    doc.text("Description", 70, y);
+                    doc.text("Max", 155, y);
+                    doc.text("Obtained", 175, y);
+                    y += 4;
+                    doc.setLineWidth(0.1);
+                    doc.line(20, y, 190, y);
+                    y += 10;
+                    doc.setFont(undefined, "normal");
+
+                    if (examData.examType === "ca" || examData.examType === "ese") {
+                        const coList = examData.courseOutcomes || [];
+                        coList.forEach((co, coIdx) => {
+                            // Section Headers for CA
+                            if (examData.examType === "ca") {
+                                if (co.name === "CO1") {
+                                    doc.setFillColor(239, 246, 255);
+                                    doc.rect(20, y - 6, 170, 8, 'F');
+                                    doc.setFont(undefined, "bold");
+                                    doc.text("UNIT I ASSESSMENT (CO1 - CO3)", 105, y, { align: "center" });
+                                    doc.setFont(undefined, "normal");
+                                    y += 10;
+                                } else if (co.name === "CO4") {
+                                    doc.setFillColor(240, 253, 244);
+                                    doc.rect(20, y - 6, 170, 8, 'F');
+                                    doc.setFont(undefined, "bold");
+                                    doc.text("UNIT II ASSESSMENT (CO4 - CO5)", 105, y, { align: "center" });
+                                    doc.setFont(undefined, "normal");
+                                    y += 10;
+                                }
+                            }
+
+                            doc.setFont(undefined, "bold");
+                            doc.text(co.name, 25, y);
+                            doc.setFont(undefined, "normal");
+                            
+                            // Shorten description if too long
+                            let desc = co.description || "N/A";
+                            if (desc.length > 45) desc = desc.substring(0, 42) + "...";
+                            doc.text(desc, 70, y);
+
+                            let coMax = 0;
+                            let coObtained = 0;
+                            co.criteria.forEach((c, cIdx) => {
+                                const key = `CO${coIdx + 1}_C${cIdx + 1}`;
+                                const val = result.coMarks?.[key] || (result.absent ? 0 : 0);
+                                coMax += c.maxMarks;
+                                coObtained += val;
+                            });
+                            
+                            doc.text(coMax.toString(), 158, y, { align: "right" });
+                            doc.text(result.absent ? "AB" : coObtained.toString(), 178, y, { align: "right" });
+                            
+                            y += 8;
+                            doc.setDrawColor(241, 245, 249);
+                            doc.line(25, y - 2, 185, y - 2);
+                        });
+                    } else {
+                        // Standard handling
+                        examData.criteria.forEach((c, idx) => {
+                            doc.text(c.name, 25, y);
+                            doc.text(c.maxMarks.toString(), 158, y, { align: "right" });
+                            doc.text(result.absent ? "AB" : (result.marks?.[idx] || 0).toString(), 178, y, { align: "right" });
+                            y += 8;
+                        });
+                    }
+
+                    // --- RESULT BLOCK ---
+                    y += 10;
+                    doc.setFillColor(241, 245, 249);
+                    doc.rect(130, y, 60, 25, 'F');
+                    doc.setFont(undefined, "bold");
+                    doc.setFontSize(11);
+                    doc.text("TOTAL MARKS", 135, y + 10);
+                    doc.text(`${result.absent ? 'AB' : result.totalMarks} / ${examData.totalMarks}`, 185, y + 10, { align: "right" });
+                    
+                    doc.text("GRADE", 135, y + 20);
+                    doc.text(result.grade || (result.absent ? "AB" : "N/A"), 185, y + 20, { align: "right" });
+
+                    // Final Performance Note
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, "normal");
+                    doc.text(`Aggregate Percentage: ${result.absent ? 'AB' : (parseFloat(result.percentage) || 0).toFixed(2) + '%'}`, 20, y + 10);
+                    doc.text(`Attendance Status: ${result.absent ? 'ABSENT' : 'PRESENT'}`, 20, y + 18);
+
+                    // --- SIGNATURE SECTION ---
+                    y = 250;
+                    doc.line(20, y, 60, y);
+                    doc.line(85, y, 125, y);
+                    doc.line(150, y, 190, y);
+                    
+                    doc.setFontSize(9);
+                    doc.text("Subject Teacher", 40, y + 5, { align: "center" });
+                    doc.text("Coordinator", 105, y + 5, { align: "center" });
+                    doc.text("HOD", 170, y + 5, { align: "center" });
+
+                    // Footer
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text("This is an electronically generated marksheet validated by the university evaluation system.", 105, 280, { align: "center" });
+                    doc.text(`Digital Signature ID: ${resultDoc.id.substring(0, 12).toUpperCase()} | Timestamp: ${new Date().toLocaleString()}`, 105, 285, { align: "center" });
+
+                    studentIndex++;
+                }
+
+                doc.save(`Marksheets_${subjectData.name}_${examData.name}.pdf`);
+                showToast("PDF Generated Successfully!", "success");
+
+            } catch (error) {
+                console.error("Print Error:", error);
+                showToast("Failed to generate PDF: " + error.message, "danger");
+            }
+        };
+
+        window.viewQuestionAssignment = async function(assignmentId) {
+            try {
+                const docSnap = await window.getDoc(window.doc(window.db, "teacher_question_assignments", assignmentId));
+                if (!docSnap.exists()) { showToast("Assignment not found", "danger"); return; }
+                const data = docSnap.data();
+                
+                let html = `<div style="padding:15px;max-height:60vh;overflow-y:auto;">
+                    <h4 style="margin-top:0;">${data.subjectId} - ${data.assignmentDate}</h4>
+                    <p style="font-size:13px;color:#666;">Assigned: ${new Date(data.assignedAt).toLocaleString()}</p>
+                    <hr>`;
+                
+                data.questions.forEach((q, i) => {
+                    html += `<div style="margin-bottom:15px;padding:12px;background:#f8f9fa;border-radius:8px;border-left:4px solid #3b82f6;">
+                        <strong>Q${i + 1} (Unit ${q.unit}, ${q.marks}M):</strong><br>
+                        <div style="margin-top:5px;font-size:14px;color:#333;">${q.text || q.questionText || ''}</div>
+                    </div>`;
+                });
+                
+                html += `</div>`;
+                
+                const modal = document.createElement("div");
+                modal.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999999;padding:20px;";
+                modal.innerHTML = `
+                    <div class="card" style="width:100%;max-width:600px;background:white;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.2);overflow:hidden;">
+                        <div style="padding:15px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+                            <h3 style="margin:0;">Question Set Preview</h3>
+                            <button onclick="this.closest('div.card').parentElement.remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+                        </div>
+                        ${html}
+                        <div style="padding:15px;border-top:1px solid #eee;text-align:right;">
+                            <button class="btn btn-primary" onclick="this.closest('div.card').parentElement.remove()">Close</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } catch (e) {
+                showToast("Error: " + e.message, "danger");
+            }
+        };
+        async function previewEvaluationSubmission(examId, isReadOnly = false) {
+            const modal = document.getElementById('previewModal');
+            const body = document.getElementById('previewModalBody');
+            const confirmBtn = document.getElementById('confirmFinalizationBtn');
+            const modalTitle = modal ? modal.querySelector('h3') : null;
+
+            if (!modal || !body) return;
+
+            modal.style.display = 'flex';
+            body.innerHTML = '<div class="loading"><div class="spinner"></div>Generating summary...</div>';
+
+            try {
+                const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
+                if (!examDoc.exists()) { 
+                    showToast('Exam not found', 'danger'); 
+                    body.innerHTML = '<div class="alert alert-danger"><strong>Error:</strong> Exam not found in database.</div>';
+                    return; 
+                }
+                const examData = examDoc.data();
+
+                const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', examData.subjectId));
+                if (!subjectDoc.exists()) {
+                    showToast('Subject not found', 'danger');
+                    body.innerHTML = '<div class="alert alert-danger"><strong>Error:</strong> Associated subject not found.</div>';
+                    return;
+                }
+                const subjectData = subjectDoc.data();
+
+                const studentsSnap = await window.getDocs(window.query(window.collection(window.db, 'students'),
+                    window.where('class', '==', subjectData.class || ''),
+                    window.where('division', '==', subjectData.division || '')));
+                
+                if (studentsSnap.empty) {
+                     showToast('No students found for this class/division', 'warning');
+                     // We continue to show the summary but it will be empty
+                }
+
+                const resultsSnap = await window.getDocs(window.query(window.collection(window.db, 'results'),
+                    window.where('examId', '==', examId)));
+
+                const resultsMap = {};
+                resultsSnap.forEach(d => { resultsMap[d.data().studentId] = d.data(); });
+
+                if (isReadOnly) {
+                    if (confirmBtn) confirmBtn.style.display = 'none';
+                    if (modalTitle) modalTitle.textContent = 'Examination Progress Monitor';
+                } else {
+                    if (confirmBtn) {
+                        confirmBtn.style.display = 'block';
+                        confirmBtn.onclick = () => finalizeEvaluationByTeacher(examId);
+                    }
+                    if (modalTitle) modalTitle.textContent = 'Evaluation Preview & Confirmation';
+                }
+
+                const evaluatedCount = resultsSnap.docs.filter(d => d.data().status === 'COMPLETE').length;
+                const absentCount = resultsSnap.docs.filter(d => d.data().status === 'ABSENT').length;
+                const totalStudents = studentsSnap.size;
+                const incompleteCount = totalStudents - evaluatedCount - absentCount;
+
+                let html = '<div style=\"margin-bottom:20px; background:var(--bg-surface2); padding:16px; border-radius:var(--radius); border:1px solid var(--border);\">';
+                html += '<h4 style=\"margin:0 0 12px 0; color:var(--primary); font-weight:800;\">Exam Summary</h4>';
+                html += '<div style=\"display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:13px; color:var(--text-sub);\">';
+                html += '<div><strong>Exam:</strong> <span style=\"color:var(--text-main);\">' + (examData.name || 'N/A') + '</span></div>';
+                html += '<div><strong>Subject:</strong> <span style=\"color:var(--text-main);\">' + (subjectData.name || 'N/A') + '</span></div>';
+                html += '<div><strong>Status:</strong> <span class=\"badge ' + (examData.status === 'FINALIZED' ? 'badge-danger' : 'badge-success') + '\">' + (examData.status || 'ACTIVE') + '</span></div>';
+                html += '</div></div>';
+
+                html += '<div class=\"stats-grid\" style=\"grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:20px;\">';
+                html += '<div class=\"stat-card success\"><h3>Evaluated</h3><div class=\"value\">' + evaluatedCount + '</div></div>';
+                html += '<div class=\"stat-card warning\"><h3>Absent</h3><div class=\"value\">' + absentCount + '</div></div>';
+                html += '<div class=\"stat-card danger\"><h3>Pending</h3><div class=\"value\">' + incompleteCount + '</div></div>';
+                html += '</div>';
+
+                if (incompleteCount > 0 && !isReadOnly) {
+                    html += '<div class=\"alert alert-warning\" style=\"margin-bottom:20px;\">⚠ <strong>Partially Evaluated:</strong> ' + incompleteCount + ' students pending.</div>';
+                }
+
+                html += '<div class=\"card\" style=\"padding:0; overflow-x:auto;\"><table style=\"font-size:13px; margin:0;\">';
+                html += '<thead><tr><th>#</th><th>Student</th><th>Marks</th><th>Status</th></tr></thead><tbody>';
+
+                studentsSnap.docs.forEach((sDoc, idx) => {
+                    const student = sDoc.data();
+                    const res = resultsMap[sDoc.id];
+                    const status = res ? (res.absent ? 'ABSENT' : 'COMPLETE') : 'NOT EVALUATED';
+                    const marks = res ? (res.absent ? 'AB' : Number(res.totalMarks).toFixed(1)) : '-';
+                    const badgeClass = status === 'COMPLETE' ? 'success' : (status === 'ABSENT' ? 'danger' : 'warning');
+                    html += '<tr><td>' + (idx + 1) + '</td><td>' + (student.name || 'N/A') + '<br><small>' + (student.enrollment || '-') + '</small></td>';
+                    html += '<td><strong>' + marks + ' / ' + (examData.totalMarks || 0) + '</strong></td>';
+                    html += '<td><span class=\"badge badge-' + badgeClass + '\">' + status + '</span></td></tr>';
+                });
+
+                html += '</tbody></table></div>';
+                body.innerHTML = html;
+
+            } catch (err) {
+                console.error(err);
+                body.innerHTML = '<div class=\"alert alert-danger\">Error: ' + err.message + '</div>';
+            }
+        }
+
+        function closePreviewModal() {
+            const modal = document.getElementById('previewModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closePreviewModal = closePreviewModal;
+
+        async function finalizeEvaluationByTeacher(examId) {
+            const confirmBtn = document.getElementById('confirmFinalizationBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Confirming...';
+
+            try {
+                const examDoc = await window.getDoc(window.doc(window.db, 'exams', examId));
+                const examData = examDoc.data();
+
+                await window.updateDoc(window.doc(window.db, 'exams', examId), {
+                    teacherFinalized: true,
+                    teacherFinalizedAt: new Date().toISOString(),
+                    teacherFinalizedBy: window.currentUser.uid,
+                    teacherFinalizedName: window.currentUser.name
+                });
+
+                await window.addDoc(window.collection(window.db, 'audit_logs'), {
+                    action: 'TEACHER_FINALIZED_EVALUATION',
+                    examId,
+                    examName: examData.name,
+                    subjectId: examData.subjectId,
+                    teacherEmail: window.currentUser.email,
+                    teacherName: window.currentUser.name,
+                    timestamp: new Date().toISOString(),
+                    performedBy: window.currentUser.uid,
+                    performedByRole: window.currentUser.role,
+                    details: `Evaluation for ${examData.name} finalized by teacher.`
+                });
+
+                showToast('Evaluation finalized and locked!', 'success');
+                closePreviewModal();
+                loadEvaluationForm();
+
+            } catch (error) {
+                showToast('Finalization failed: ' + error.message, 'danger');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm & Finalize Marks';
+            }
+        }
+        window.finalizeEvaluationByTeacher = finalizeEvaluationByTeacher;
+
+        window.exportExamPDF = (eid) => exportResults(eid, 'pdf');
+        window.exportExamResultsExcel = (eid) => exportResults(eid, 'excel');
+
+
+
+        // Global Exposure & Bridging
+        window.showToast = showToast;
+        window.calculateGrade = calculateGrade;
+        window.showTeacherSection = showTeacherSection;
+        window.showStudentSection = showStudentSection;
+        
+        // Flush any toast messages that were queued before app.js loaded
+        if (typeof window._flushToastQueue === 'function') {
+            window._flushToastQueue(showToast);
+        }
+        
+        window.__appReady = true;
+
+        let subjectPassChart = null;
+        let coAttainmentChart = null;
+
+        async function loadDepartmentAnalytics() {
+            const year = document.getElementById('analyticsYear').value;
+            const sem = document.getElementById('analyticsSemester').value;
+            const dept = window.currentUser.department;
+
+            try {
+                const examsQuery = window.query(
+                    window.collection(window.db, 'exams'),
+                    window.where('department', '==', dept),
+                    window.where('academicYear', '==', year),
+                    window.where('semester', '==', sem),
+                    window.where('status', '==', 'FINALIZED')
+                );
+                const examsSnap = await window.getDocs(examsQuery);
+
+                const subjectStats = {};
+                const coStats = { 'CO1': 0, 'CO2': 0, 'CO3': 0, 'CO4': 0, 'CO5': 0, 'CO6': 0 };
+                const coCounts = { 'CO1': 0, 'CO2': 0, 'CO3': 0, 'CO4': 0, 'CO5': 0, 'CO6': 0 };
+
+                for (const examDoc of examsSnap.docs) {
+                    const exam = examDoc.data();
+                    const resultsSnap = await window.getDocs(window.query(window.collection(window.db, 'results'), window.where('examId', '==', examDoc.id)));
+
+                    let pass = 0, total = 0;
+                    resultsSnap.forEach(rDoc => {
+                        const r = rDoc.data();
+                        if (r.absent) return;
+                        total++;
+                        if (parseFloat(r.percentage) >= 40) pass++;
+
+                        if (r.coAttainment) {
+                            r.coAttainment.forEach(ca => {
+                                if (coStats[ca.co] !== undefined) {
+                                    coStats[ca.co] += ca.percentage;
+                                    coCounts[ca.co]++;
+                                }
+                            });
+                        }
+                    });
+
+                    if (total > 0) {
+                        subjectStats[exam.name] = (pass / total) * 100;
+                    }
+                }
+
+                renderCharts(subjectStats, coStats, coCounts);
+                showToast('Analytics generated', 'success');
+            } catch (e) {
+                showToast('Analytics failed: ' + e.message, 'danger');
+            }
+        }
+
+        function renderCharts(subjectStats, coStats, coCounts) {
+            const ctx1 = document.getElementById('subjectPassChart').getContext('2d');
+            const ctx2 = document.getElementById('coAttainmentChart').getContext('2d');
+
+            if (subjectPassChart) subjectPassChart.destroy();
+            if (coAttainmentChart) coAttainmentChart.destroy();
+
+            subjectPassChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(subjectStats),
+                    datasets: [{
+                        label: 'Pass %',
+                        data: Object.values(subjectStats),
+                        backgroundColor: '#4f46e5'
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+
+            const coLabels = Object.keys(coStats);
+            const coData = coLabels.map(l => coCounts[l] > 0 ? coStats[l] / coCounts[l] : 0);
+
+            coAttainmentChart = new Chart(ctx2, {
+                type: 'radar',
+                data: {
+                    labels: coLabels,
+                    datasets: [{
+                        label: 'Avg Attainment %',
+                        data: coData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: '#10b981'
+                    }]
+                },
+                options: { scales: { r: { beginAtZero: true, max: 100 } } }
+            });
+        }
+        window.loadDepartmentAnalytics = loadDepartmentAnalytics;
+
+        console.log("Evaluator v1.0.9: App logic initialized and bridged.");
