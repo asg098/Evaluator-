@@ -166,9 +166,28 @@
                 timestamp: new Date().toISOString()
             });
             this.saveQueue(queue);
+
+            // Sync with ASG Offline Engine local DB if available
+            if (window.ASGOffline && typeof window.ASGOffline.save === 'function') {
+                try {
+                    const parts = (path || '').split('/');
+                    const col = parts[0] || 'app_data';
+                    const docId = parts[1] || null;
+                    if (operation === 'addDoc' || operation === 'setDoc') {
+                        window.ASGOffline.save(col, { id: docId, ...data });
+                    } else if (operation === 'updateDoc' && docId) {
+                        window.ASGOffline.update(col, docId, data);
+                    } else if (operation === 'deleteDoc' && docId) {
+                        window.ASGOffline.delete(col, docId);
+                    }
+                } catch (err) {
+                    console.warn('[ASGOffline] Sync queue mirror warning:', err);
+                }
+            }
+
             console.log(`[Sync] Operation ${operation} queued for ${path}`);
             if (typeof window.showToast === 'function') {
-                window.showToast('Work saved locally. Will sync when online.', 'info', 3000);
+                window.showToast('Work saved locally via ASG Offline. Will sync when online.', 'info', 3000);
             }
         },
         
