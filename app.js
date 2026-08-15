@@ -1282,7 +1282,7 @@ ${isTeacher ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 loadQuestionBankSubjects();
                 loadQuestions();
 
-                const dateInput = document.getElementById('distDate');
+                const dateInput = document.getElementById('distDate') || document.getElementById('qDistDate');
                 if (dateInput && !dateInput.value) {
                     dateInput.value = new Date().toISOString().split('T')[0];
                 }
@@ -3590,7 +3590,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         async function loadTeacherQuestionsForSubject() {
             const subjectId = document.getElementById('teacherQuestionsSubject')?.value;
-            const container = document.getElementById('teacherQuestionsList');
+            const container = document.getElementById('teacherAssignedQuestionsList') || document.getElementById('teacherQuestionsList');
             if (!container) return;
 
             if (!subjectId) {
@@ -3684,22 +3684,24 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         function toggleTeacherExamType() {
-            const type = document.getElementById('teacherExamType').value;
+            const typeEl = document.getElementById('teacherExamType');
+            if (!typeEl) return;
+            const type = typeEl.value;
             const standardFields = document.getElementById('teacherStandardExamFields');
             const caFields = document.getElementById('teacherCAExamFields');
             const eseFields = document.getElementById('teacherESEExamFields');
 
             if (type === 'ca') {
-                standardFields.style.display = 'none';
-                caFields.style.display = 'block';
+                if (standardFields) standardFields.style.display = 'none';
+                if (caFields) caFields.style.display = 'block';
                 if (eseFields) eseFields.style.display = 'none';
             } else if (type === 'ese') {
-                standardFields.style.display = 'none';
-                caFields.style.display = 'none';
+                if (standardFields) standardFields.style.display = 'none';
+                if (caFields) caFields.style.display = 'none';
                 if (eseFields) eseFields.style.display = 'block';
             } else {
-                standardFields.style.display = 'block';
-                caFields.style.display = 'none';
+                if (standardFields) standardFields.style.display = 'block';
+                if (caFields) caFields.style.display = 'none';
                 if (eseFields) eseFields.style.display = 'none';
             }
         }
@@ -3710,21 +3712,23 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const marksInput = document.getElementById('teacherCAMaxMarksCA');
             const totalLabel = document.getElementById('caTotalLabel');
             
-            if (template === 'unit1') {
-                nameInput.value = 'Continuous Assessment - JUnit I';
-                coInput.value = 3;
-                marksInput.value = 4;
-            } else if (template === 'unit2') {
-                nameInput.value = 'Continuous Assessment - JUnit II';
-                coInput.value = 2;
-                marksInput.value = 4;
-            } else if (template === 'full') {
-                nameInput.value = 'Continuous Assessment - (JUnit I & II)';
-                coInput.value = 5;
-                marksInput.value = 4;
+            if (nameInput && coInput && marksInput) {
+                if (template === 'unit1') {
+                    nameInput.value = 'Continuous Assessment - JUnit I';
+                    coInput.value = 3;
+                    marksInput.value = 4;
+                } else if (template === 'unit2') {
+                    nameInput.value = 'Continuous Assessment - JUnit II';
+                    coInput.value = 2;
+                    marksInput.value = 4;
+                } else if (template === 'full') {
+                    nameInput.value = 'Continuous Assessment - (JUnit I & II)';
+                    coInput.value = 5;
+                    marksInput.value = 4;
+                }
+                if (totalLabel) totalLabel.textContent = coInput.value * marksInput.value;
+                showToast('Template Applied', 'success');
             }
-            if (totalLabel) totalLabel.textContent = coInput.value * marksInput.value;
-            showToast('Template Applied', 'success');
         };
 
         window.createExamUnified = async function(type) {
@@ -3733,10 +3737,10 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             let subjectId, examName, examData;
             
             if (type === 'ca') {
-                subjectId = document.getElementById('teacherExamSubjectCA').value;
-                examName = document.getElementById('teacherExamNameCA').value.trim();
-                const coCount = parseInt(document.getElementById('teacherCOCountCA').value);
-                const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarksCA').value);
+                subjectId = document.getElementById('teacherExamSubjectCA')?.value;
+                examName = document.getElementById('teacherExamNameCA')?.value?.trim();
+                const coCount = parseInt(document.getElementById('teacherCOCountCA')?.value || 0);
+                const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarksCA')?.value || 0);
                 
                 if (!subjectId || !examName) { showToast('Please fill all CA fields', "warning"); return; }
                 
@@ -3768,9 +3772,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     createdBy: window.currentUser.uid
                 };
             } else if (type === 'ese') {
-                subjectId = document.getElementById('teacherExamSubjectESE').value;
-                examName = document.getElementById('teacherExamNameESE').value.trim();
-                const marksPerQ = parseFloat(document.getElementById('teacherESEMarksESE').value);
+                subjectId = document.getElementById('teacherExamSubjectESE')?.value;
+                examName = document.getElementById('teacherExamNameESE')?.value?.trim();
+                const marksPerQ = parseFloat(document.getElementById('teacherESEMarksESE')?.value || 0);
                 
                 if (!subjectId || !examName) { showToast('Please fill all ESE fields', "warning"); return; }
                 
@@ -3799,14 +3803,20 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             try {
                 window.showLoadingMessage('Saving exam...');
                 const subjectSelect = document.getElementById(type === 'ca' ? 'teacherExamSubjectCA' : 'teacherExamSubjectESE');
-                const selectedOption = subjectSelect.selectedOptions[0];
-                examData.academicYear = selectedOption.getAttribute('data-year') || '';
-                examData.semester = selectedOption.getAttribute('data-sem') || '';
+                const selectedOption = subjectSelect?.selectedOptions?.[0];
+                if (selectedOption && examData) {
+                    examData.academicYear = selectedOption.getAttribute('data-year') || '';
+                    examData.semester = selectedOption.getAttribute('data-sem') || '';
+                }
                 
-                await window.addDoc(window.collection(window.db, 'exams'), examData);
-                window.hideLoadingMessage();
-                showToast('Exam created successfully', 'success');
-                loadTeacherExamsList();
+                if (examData) {
+                    await window.addDoc(window.collection(window.db, 'exams'), examData);
+                    window.hideLoadingMessage();
+                    showToast('Exam created successfully', 'success');
+                    loadTeacherExamsList();
+                } else {
+                    window.hideLoadingMessage();
+                }
             } catch (error) {
                 window.hideLoadingMessage();
                 showToast('Error: ' + error.message, 'danger');
@@ -3818,31 +3828,31 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const nameInput = document.getElementById('teacherExamName');
             
             if (template.startsWith('ca_') || template.startsWith('ipa')) {
-                typeSelect.value = 'ca';
+                if (typeSelect) typeSelect.value = 'ca';
                 toggleTeacherExamType();
                 const coInput = document.getElementById('teacherCOCount');
                 const marksInput = document.getElementById('teacherCAMaxMarks');
                 
                 if (template === 'ca_unit1' || template === 'ipa1') {
-                    nameInput.value = 'Continuous Assessment - IPA 1 (CO1, CO2, CO3)';
-                    coInput.value = 3;
-                    marksInput.value = 4;
+                    if (nameInput) nameInput.value = 'Continuous Assessment - IPA 1 (CO1, CO2, CO3)';
+                    if (coInput) coInput.value = 3;
+                    if (marksInput) marksInput.value = 4;
                     window.showToast('Applied IPA 1 Template: CO1-3 @ 4m each (Total: 12m)', 'info');
                 } else if (template === 'ca_unit2' || template === 'ipa2') {
-                    nameInput.value = 'Continuous Assessment - IPA 2 (CO4, CO5)';
-                    coInput.value = 2;
-                    marksInput.value = 4;
+                    if (nameInput) nameInput.value = 'Continuous Assessment - IPA 2 (CO4, CO5)';
+                    if (coInput) coInput.value = 2;
+                    if (marksInput) marksInput.value = 4;
                     window.showToast('Applied IPA 2 Template: CO4-5 @ 4m each (Total: 8m)', 'info');
                 } else if (template === 'ca_full') {
-                    nameInput.value = 'Continuous Assessment - Full (CO1-5)';
-                    coInput.value = 5;
-                    marksInput.value = 4;
+                    if (nameInput) nameInput.value = 'Continuous Assessment - Full (CO1-5)';
+                    if (coInput) coInput.value = 5;
+                    if (marksInput) marksInput.value = 4;
                     window.showToast('Applied Full CA Template: CO1-5 @ 4m each (Total: 20m)', 'info');
                 }
             } else if (template === 'ese_standard' || template === 'ese') {
-                typeSelect.value = 'ese';
+                if (typeSelect) typeSelect.value = 'ese';
                 toggleTeacherExamType();
-                nameInput.value = 'End Semester Examination (ESE)';
+                if (nameInput) nameInput.value = 'End Semester Examination (ESE)';
                 const marksInput = document.getElementById('teacherESEMarks');
                 if (marksInput) marksInput.value = 5;
                 const eseLbl = document.getElementById('eseTotalLabel');
@@ -3874,9 +3884,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         async function createTeacherExam() {
             if (!window.currentUser) { showToast('Session expired. Please log in again.', 'danger'); return; }
-            const subjectId = document.getElementById('teacherExamSubject').value;
-            const examType = document.getElementById('teacherExamType').value;
-            const examName = document.getElementById('teacherExamName').value.trim();
+            const subjectId = document.getElementById('teacherExamSubject')?.value;
+            const examType = document.getElementById('teacherExamType')?.value;
+            const examName = document.getElementById('teacherExamName')?.value?.trim();
 
             if (!subjectId || !examName) {
                 showToast('Please fill in all required fields', "warning");
@@ -3885,9 +3895,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
             try {
                 const subjectSelect = document.getElementById('teacherExamSubject');
-                const selectedOption = subjectSelect.selectedOptions[0];
-                const academicYear = selectedOption.getAttribute('data-year');
-                const semester = selectedOption.getAttribute('data-sem');
+                const selectedOption = subjectSelect?.selectedOptions?.[0];
+                const academicYear = selectedOption?.getAttribute('data-year');
+                const semester = selectedOption?.getAttribute('data-sem');
 
                 let examData = {
                     name: examName,
@@ -3903,13 +3913,13 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 };
 
                 if (examType === 'standard') {
-                    const count = parseInt(document.getElementById('teacherCriteriaCount').value);
+                    const count = parseInt(document.getElementById('teacherCriteriaCount')?.value || 0);
                     const criteria = [];
                     let totalMarks = 0;
 
                     for (let i = 1; i <= count; i++) {
-                        const name = document.getElementById(`teacherCriterion${i}Name`).value;
-                        const marks = parseFloat(document.getElementById(`teacherCriterion${i}Marks`).value);
+                        const name = document.getElementById(`teacherCriterion${i}Name`)?.value || `Criterion ${i}`;
+                        const marks = parseFloat(document.getElementById(`teacherCriterion${i}Marks`)?.value || 0);
                         criteria.push({ name, maxMarks: marks });
                         totalMarks += marks;
                     }
@@ -3917,14 +3927,13 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     examData.criteria = criteria;
                     examData.totalMarks = totalMarks;
                 } else if (examType === 'ca') {
-                    const coCount = parseInt(document.getElementById('teacherCOCount').value);
-                    const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarks').value);
+                    const coCount = parseInt(document.getElementById('teacherCOCount')?.value || 0);
+                    const maxMarks = parseFloat(document.getElementById('teacherCAMaxMarks')?.value || 0);
                     const nameLower = examName.toLowerCase();
                     
                     const courseOutcomes = [];
                     let actualTotalMarks = 0;
                     
-                    // Logic based on diagram: JUnit I (CO1-3) or JUnit II (CO4-5) or Full
                     let startCO = 1;
                     if (nameLower.includes('ipa 2') || nameLower.includes('junit ii') || nameLower.includes('unit 2')) {
                         startCO = 4;
@@ -3943,11 +3952,10 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     examData.courseOutcomes = courseOutcomes;
                     examData.totalMarks = actualTotalMarks;
                 } else if (examType === 'ese') {
-                    const marksPerQ = parseFloat(document.getElementById('teacherESEMarks').value);
+                    const marksPerQ = parseFloat(document.getElementById('teacherESEMarks')?.value || 0);
                     const courseOutcomes = [];
                     let actualTotalMarks = 0;
                     
-                    // ESE always has 5 questions (CO1-CO5) as per diagram
                     for (let co = 1; co <= 5; co++) {
                         courseOutcomes.push({
                             name: `CO${co}`,
@@ -3961,12 +3969,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                 await window.addDoc(window.collection(window.db, 'exams'), examData);
 
-                const detailsMsg = examType === 'ca'
-                    ? `\n\nCOs: ${examData.coCount}\nCAs per CO: ${examData.caCount}\nTotal Marks: ${examData.totalMarks}`
-                    : `\n\nCriteria: ${examData.criteria.length}\nTotal Marks: ${examData.totalMarks}`;
-
                 showToast('Exam created successfully!', 'success');
-                document.getElementById('teacherExamName').value = '';
+                const nameEl = document.getElementById('teacherExamName');
+                if (nameEl) nameEl.value = '';
                 loadTeacherExamsList();
 
             } catch (error) {
@@ -3976,7 +3981,8 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         async function loadTeacherExamsList() {
             const container = document.getElementById('teacherExamsList');
-            const filterValue = document.getElementById('teacherExamsFilter').value;
+            const filterEl = document.getElementById('teacherExamsFilter');
+            const filterValue = filterEl ? filterEl.value : 'all';
 
             if (!container) return;
 
@@ -6924,25 +6930,21 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
         }
 
-        /**
-         * Download Question Bank Excel template
-         */
         function downloadQuestionBankTemplate() {
             try {
                 const headers = ['subjectId', 'unit', 'marks', 'difficulty', 'questionText'];
-                const sampleData = [
+                const templateData = [
                     {
-                        'subjectId': '(use the Firestore document ID of the subject)',
+                        'subjectId': '',
                         'unit': '1',
                         'marks': '2',
                         'difficulty': 'medium',
-                        'questionText': 'Sample question text here'
+                        'questionText': ''
                     }
                 ];
 
-                // Use sample data instead of empty template
-                exportToExcel(sampleData, 'question_bank_template', 'Template');
-                showToast('Template downloaded with sample data', 'success');
+                exportToExcel(templateData, 'Question_Bank_Template', 'Questions');
+                showToast('Question Bank Excel template downloaded!', 'success');
             } catch (error) {
                 console.error('Error downloading template:', error);
                 showToast('Failed to download template', 'danger');
@@ -8630,18 +8632,21 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         let coAttainmentChart = null;
 
         async function loadDepartmentAnalytics() {
-            const year = document.getElementById('analyticsYear').value;
-            const sem = document.getElementById('analyticsSemester').value;
-            const dept = window.currentUser.department;
+            const yearEl = document.getElementById('analyticsYear');
+            const semEl = document.getElementById('analyticsSemester');
+            const year = yearEl ? yearEl.value : '2025-26';
+            const sem = semEl ? semEl.value : 'SEM-1';
+            const dept = window.currentUser ? (window.currentUser.department || window.currentUser.departmentId || '') : '';
 
             try {
-                const examsQuery = window.query(
-                    window.collection(window.db, 'exams'),
-                    window.where('department', '==', dept),
-                    window.where('academicYear', '==', year),
-                    window.where('semester', '==', sem),
-                    window.where('status', '==', 'FINALIZED')
-                );
+                let examsQuery = window.collection(window.db, 'exams');
+                const constraints = [];
+                if (dept) constraints.push(window.where('department', '==', dept));
+                if (year) constraints.push(window.where('academicYear', '==', year));
+                if (sem) constraints.push(window.where('semester', '==', sem));
+                constraints.push(window.where('status', '==', 'FINALIZED'));
+                
+                examsQuery = window.query(examsQuery, ...constraints);
                 const examsSnap = await window.getDocs(examsQuery);
 
                 const subjectStats = {};
@@ -8670,7 +8675,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     });
 
                     if (total > 0) {
-                        subjectStats[exam.name] = (pass / total) * 100;
+                        subjectStats[exam.name || 'Exam'] = (pass / total) * 100;
                     }
                 }
 
@@ -8682,13 +8687,23 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         function renderCharts(subjectStats, coStats, coCounts) {
-            const ctx1 = document.getElementById('subjectPassChart').getContext('2d');
-            const ctx2 = document.getElementById('coAttainmentChart').getContext('2d');
+            const canvas1 = document.getElementById('subjectPassChart');
+            const canvas2 = document.getElementById('coAttainmentChart');
+            if (!canvas1 || !canvas2) return;
+
+            const ChartLib = window.Chart || (typeof Chart !== 'undefined' ? Chart : null);
+            if (!ChartLib) {
+                showToast('Chart.js library not loaded', 'warning');
+                return;
+            }
+
+            const ctx1 = canvas1.getContext('2d');
+            const ctx2 = canvas2.getContext('2d');
 
             if (subjectPassChart) subjectPassChart.destroy();
             if (coAttainmentChart) coAttainmentChart.destroy();
 
-            subjectPassChart = new Chart(ctx1, {
+            subjectPassChart = new ChartLib(ctx1, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(subjectStats),
@@ -8698,13 +8713,13 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         backgroundColor: '#4f46e5'
                     }]
                 },
-                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
             });
 
             const coLabels = Object.keys(coStats);
             const coData = coLabels.map(l => coCounts[l] > 0 ? coStats[l] / coCounts[l] : 0);
 
-            coAttainmentChart = new Chart(ctx2, {
+            coAttainmentChart = new ChartLib(ctx2, {
                 type: 'radar',
                 data: {
                     labels: coLabels,
@@ -8715,7 +8730,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         borderColor: '#10b981'
                     }]
                 },
-                options: { scales: { r: { beginAtZero: true, max: 100 } } }
+                options: { responsive: true, scales: { r: { beginAtZero: true, max: 100 } } }
             });
         }
         window.loadDepartmentAnalytics = loadDepartmentAnalytics;
@@ -8736,22 +8751,13 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
             const templateData = [
                 {
-                    'Faculty Name': 'Dr. Example Smith',
-                    'Div': 'A',
-                    'Batch 1': '✓',
-                    'Batch 2': '✓',
-                    'Batch 3': '',
-                    'Email': 'smith@college.edu',
-                    'Number': '9876543210'
-                },
-                {
-                    'Faculty Name': 'Prof. Jane Doe',
-                    'Div': 'B',
-                    'Batch 1': '✓',
+                    'Faculty Name': '',
+                    'Div': '',
+                    'Batch 1': '',
                     'Batch 2': '',
-                    'Batch 3': '✓',
-                    'Email': 'jane.doe@college.edu',
-                    'Number': '8765432109'
+                    'Batch 3': '',
+                    'Email': '',
+                    'Number': ''
                 }
             ];
 
@@ -9398,8 +9404,10 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 const resultsMap = {};
                 resultsSnap.forEach(d => { resultsMap[d.data().studentId] = d.data(); });
 
-                const teacherName = window.currentUser?.name || 'Prof. Faculty';
-                const examTitle = examData.name || (examData.examType === 'ese' ? 'End Semester Examination May 2026' : 'Continuous Assessment Examination');
+                const teacherName = window.currentUser?.name || 'Faculty Examiner';
+                const instituteName = (window.currentUser?.institute || subjectData.institute || 'UNIVERSAL STUDENT EVALUATION SYSTEM').toUpperCase();
+                const deptName = subjectData.department || window.currentUser?.department || 'Academic Department';
+                const examTitle = examData.name || (examData.examType === 'ese' ? 'End Semester Examination' : 'Continuous Assessment Examination');
 
                 const cos = (examData.courseOutcomes && examData.courseOutcomes.length > 0) ? examData.courseOutcomes : [
                     { name: 'CO1', criteria: [{ maxMarks: 5 }] },
@@ -9409,44 +9417,39 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     { name: 'CO5', criteria: [{ maxMarks: 5 }] }
                 ];
 
-                const defaultRubrics = [
-                    { name: 'CO1: Class & Object', exc: 'Correct class created with proper data members and object creation', gd: 'Minor mistake in class/object', sat: 'Class created partially with missing members/object', pr: 'Class/object concept not implemented' },
-                    { name: 'CO2: Constructor & Function', exc: 'Constructor correctly initializes values and function performs required calculation', gd: 'Minor mistake in constructor or function logic', sat: 'Constructor/function partially implemented', pr: 'Constructor/function missing or incorrect' },
-                    { name: 'CO3: Inheritance & Overriding', exc: 'Correct inheritance and proper overriding of base class function in derived class', gd: 'Minor mistake in inheritance/overriding but concept works', sat: 'Inheritance used but overriding not properly shown', pr: 'Inheritance/overriding not implemented' },
-                    { name: 'CO4: Program Flow & Output', exc: 'All objects created, functions called correctly, and output is proper', gd: 'Minor mistake in calling or output format', sat: 'Partial function calling/output shown', pr: 'Program does not execute properly' },
-                    { name: 'CO5: Template Declaration', exc: 'Correct template function implemented and tested with required values', gd: 'Template works with minor syntax/logic issue', sat: 'Template partially implemented or tested incorrectly', pr: 'Template not used or incorrect' }
-                ];
-
                 // ==========================================
                 // PAGE 1: RUBRICS & EXAM DETAILS SHEET
                 // ==========================================
                 const aoa1 = [];
-                aoa1.push(['MIT ADT UNIVERSITY, SCHOOL OF COMPUTING, PUNE']);
-                aoa1.push(['Department of Computer Science and Engineering']);
+                aoa1.push([instituteName]);
+                aoa1.push([deptName]);
                 aoa1.push([examTitle]);
-                aoa1.push(['JURY ASSESSMENT EXAMINATION MARK SHEET']);
+                aoa1.push(['STUDENT EVALUATION & ASSESSMENT MARK SHEET']);
                 aoa1.push([]); // Spacer row 4
 
-                aoa1.push(['Subject Code:', subjectData.code || '23CSE1103R', 'Subject Name:', subjectData.name || 'Jury Assessment Examination', '']);
-                aoa1.push(['Programme:', 'B.Tech', 'Year:', subjectData.class || 'FY', `Semester: ${subjectData.semester || 'SEM-II'}`]);
-                aoa1.push(['Division:', subjectData.division || 'B', 'Batch:', subjectData.division || 'A', `Date: ${new Date().toLocaleDateString()} | Time: 9:00 am - 11:00 am`]);
-                aoa1.push(['Internal Examiner:', teacherName, 'External Examiner:', 'External Jury Member & Institute', '']);
+                aoa1.push(['Subject Code:', subjectData.code || '', 'Subject Name:', subjectData.name || 'Course Assessment', '']);
+                aoa1.push(['Programme:', subjectData.programme || 'Degree Programme', 'Year/Class:', subjectData.class || '', `Semester: ${subjectData.semester || ''}`]);
+                aoa1.push(['Division:', subjectData.division || '', 'Batch:', subjectData.batch || subjectData.division || '', `Date: ${new Date().toLocaleDateString()}`]);
+                aoa1.push(['Internal Examiner:', teacherName, 'External Examiner:', examData.externalExaminer || '', '']);
                 aoa1.push([]); // Spacer row 9
 
                 aoa1.push(['RUBRICS EVALUATION MATRIX', '', '', '', '']);
-                aoa1.push(['Criteria', 'Excellent (5-4 Marks)', 'Good (3 Marks)', 'Satisfactory (1-2 Marks)', 'Poor (0 Marks)']);
+                aoa1.push(['Criteria / Outcome', 'Excellent (80-100%)', 'Good (60-79%)', 'Satisfactory (40-59%)', 'Poor (<40%)']);
 
                 cos.forEach((co, idx) => {
-                    const r = defaultRubrics[idx % defaultRubrics.length];
+                    const desc = co.description || `Assessment Criteria for ${co.name}`;
                     aoa1.push([
-                        `${co.name}: ${co.description || r.name.split(': ')[1] || 'Evaluation Criteria'}`,
-                        r.exc, r.gd, r.sat, r.pr
+                        `${co.name}: ${desc}`,
+                        'Thorough mastery & complete implementation with no conceptual errors',
+                        'Good demonstration of concept with minor non-critical inaccuracies',
+                        'Partial implementation with conceptual or logical gaps',
+                        'Unsatisfactory implementation or concept not demonstrated'
                     ]);
                 });
 
                 const ws1 = XLSX.utils.aoa_to_sheet(aoa1);
                 ws1['!cols'] = [
-                    { wch: 24 }, // Criteria
+                    { wch: 28 }, // Criteria
                     { wch: 34 }, // Excellent
                     { wch: 28 }, // Good
                     { wch: 30 }, // Satisfactory
@@ -9464,9 +9467,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 // PAGE 2: STUDENT MARKSHEET EVALUATION SHEET
                 // ==========================================
                 const aoa2 = [];
-                aoa2.push(['MIT ADT UNIVERSITY, SCHOOL OF COMPUTING, PUNE']);
-                aoa2.push(['Jury Assessment Examination Mark Sheet - Student Evaluation Scores']);
-                aoa2.push([`Subject: ${subjectData.name || 'IDS'} (${subjectData.code || '23CSE101'})  |  Division: ${subjectData.division || 'B'}  |  Date: ${new Date().toLocaleDateString()}  |  Examiner: ${teacherName}`]);
+                aoa2.push([instituteName]);
+                aoa2.push([`${deptName} - Student Marksheet Evaluation Scores`]);
+                aoa2.push([`Subject: ${subjectData.name || ''} ${subjectData.code ? '(' + subjectData.code + ')' : ''}  |  Division: ${subjectData.division || ''}  |  Date: ${new Date().toLocaleDateString()}  |  Examiner: ${teacherName}`]);
                 aoa2.push([]); // Spacer
 
                 const coHeaders = cos.map((co, cidx) => {
@@ -9487,56 +9490,46 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     'Marks in Words'
                 ]);
 
-                let srNo = 1;
-                studentsSnap.forEach(studentDoc => {
-                    const student = studentDoc.data();
-                    const res = resultsMap[studentDoc.id];
-                    const isAbsent = !res || res.absent === true;
+                let studentSr = 1;
+                studentsSnap.docs.forEach(docSnap => {
+                    const st = docSnap.data();
+                    const res = resultsMap[docSnap.id];
+                    const isAbsent = !!res?.absent;
 
-                    const coVals = cos.map((co, cidx) => {
-                        if (isAbsent) return 'AB';
+                    const row = [
+                        studentSr,
+                        st.enrollment || st.rollNo || '',
+                        st.name || '',
+                        res?.questionNo || res?.chitNo || studentSr
+                    ];
+
+                    cos.forEach(co => {
                         const key = `${co.name}_C1`;
-                        const legacyKey = `CO${cidx + 1}_C1`;
-                        const val = res.coMarks?.[key] ?? res.coMarks?.[legacyKey] ?? null;
-                        return val !== null && val !== undefined ? val : '-';
+                        const legacyKey = co.name;
+                        const val = res?.coMarks?.[key] ?? res?.coMarks?.[legacyKey] ?? (isAbsent ? 'AB' : '');
+                        row.push(isAbsent ? 'AB' : (val !== '' && val !== null ? val : '-'));
                     });
 
-                    let totalVal = 'AB';
-                    if (!isAbsent && res) {
-                        if (res.totalMarks !== undefined && res.totalMarks !== -1) {
-                            totalVal = Number(res.totalMarks).toFixed(1);
-                        } else {
-                            let sum = 0;
-                            coVals.forEach(v => { if (typeof v === 'number') sum += v; });
-                            totalVal = sum.toFixed(1);
-                        }
-                    }
+                    const totalObt = isAbsent ? 'AB' : (res?.totalMarks !== undefined ? res.totalMarks : '-');
+                    const words = isAbsent ? 'Absent' : numberToWords(totalObt);
 
-                    const words = isAbsent ? 'Absent' : numberToWords(totalVal);
+                    row.push(totalObt);
+                    row.push(words);
 
-                    aoa2.push([
-                        srNo,
-                        student.enrollment || '',
-                        sanitizeString(student.name || ''),
-                        srNo,
-                        ...coVals,
-                        totalVal,
-                        words
-                    ]);
-
-                    srNo++;
+                    aoa2.push(row);
+                    studentSr++;
                 });
 
                 const ws2 = XLSX.utils.aoa_to_sheet(aoa2);
                 const numCols2 = 4 + cos.length + 2;
                 ws2['!cols'] = [
-                    { wch: 10 }, // Sr No
-                    { wch: 18 }, // Enrollment No
-                    { wch: 28 }, // Name of Student
-                    { wch: 20 }, // Que No
-                    ...cos.map(() => ({ wch: 16 })), // COs
-                    { wch: 24 }, // Total Marks
-                    { wch: 24 }  // Marks in Words
+                    { wch: 8 },  // Sr No
+                    { wch: 16 }, // Enrollment No
+                    { wch: 26 }, // Name
+                    { wch: 18 }, // Chit No
+                    ...cos.map(() => ({ wch: 16 })), // CO Marks
+                    { wch: 22 }, // Total Marks
+                    { wch: 20 }  // In Words
                 ];
                 ws2['!merges'] = [
                     { s: { r: 0, c: 0 }, e: { r: 0, c: numCols2 - 1 } },
@@ -9545,98 +9538,87 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 ];
 
                 // ==========================================
-                // PAGE 3: DIRECT COURSE OUTCOME (CO) ATTAINMENT SHEET
+                // PAGE 3: CO DIRECT & INDIRECT ATTAINMENT MATRIX
                 // ==========================================
                 const aoa3 = [];
-                aoa3.push(['MIT ADT UNIVERSITY, SCHOOL OF COMPUTING, PUNE']);
-                aoa3.push(['Direct Course Outcome (CO) Attainment Report']);
-                aoa3.push([`Subject: ${subjectData.name || 'IDS'} (${subjectData.code || '23CSE101'})  |  Division: ${subjectData.division || 'B'}  |  Date: ${new Date().toLocaleDateString()}  |  Examiner: ${teacherName}`]);
+                const year = document.getElementById('academicYear')?.value || subjectData.academicYear || '2025-26';
+                const semester = document.getElementById('semester')?.value || subjectData.semester || 'SEM-1';
+
+                aoa3.push([instituteName]);
+                aoa3.push([`${deptName} - Course Outcome (CO) Attainment & Matrix Report`]);
+                aoa3.push([`Subject: ${subjectData.name || ''} ${subjectData.code ? '(' + subjectData.code + ')' : ''}  |  Class: ${subjectData.class || ''}  |  Division: ${subjectData.division || ''}  |  Year: ${year}  |  Semester: ${semester}`]);
                 aoa3.push([]); // Spacer
 
-                // Table 1: Student CO Attainment Scores
-                const coScoreHeaders = [];
+                // Header Row 1
+                const headerRow1 = ['Sr. No.', 'Enrollment No', 'Name of the Student'];
                 cos.forEach(co => {
-                    coScoreHeaders.push(`${co.name} Mark`, `${co.name} Score (/3)`);
+                    headerRow1.push(`${co.name} (Max ${co.criteria?.[0]?.maxMarks || 5} M)`);
+                    headerRow1.push('Attainment Score (/3)');
                 });
+                headerRow1.push('Overall Average Obtained Marks');
+                headerRow1.push('Overall Average Attainment Score (/3)');
+                headerRow1.push('Final Attainment Level');
+                aoa3.push(headerRow1);
 
-                aoa3.push([
-                    'Sr. No.',
-                    'Enrollment No',
-                    'Name of the Student',
-                    ...coScoreHeaders,
-                    `Total Marks (/ ${totalExamMaxMarks})`,
-                    'Avg Attainment Score (/3)',
-                    'Attainment Level'
-                ]);
-
-                // Trackers for CO Summary Matrix
+                let studentSrNo = 1;
                 const coStats = cos.map(co => ({
                     coName: co.name,
                     maxMark: co.criteria?.[0]?.maxMarks || 5,
                     totalMarks: 0,
                     totalScores: 0,
-                    highCount: 0,  // Score 3 (>= 70%)
-                    medCount: 0,   // Score 2 (60-69%)
-                    lowCount: 0,   // Score 1 (< 60%)
                     studentCount: 0
                 }));
 
-                let studentSrNo = 1;
-                studentsSnap.forEach(studentDoc => {
-                    const student = studentDoc.data();
-                    const res = resultsMap[studentDoc.id];
-                    const isAbsent = !res || res.absent === true;
+                studentsSnap.docs.forEach(docSnap => {
+                    const st = docSnap.data();
+                    const res = resultsMap[docSnap.id];
+                    const isAbsent = !!res?.absent;
 
-                    const rowScores = [];
-                    let stTotalMarks = 0;
-                    let stScoreSum = 0;
+                    let studentTotalMarks = 0;
+                    let studentTotalScore = 0;
+                    let studentCOCount = 0;
+
+                    const row = [
+                        studentSrNo,
+                        st.enrollment || st.rollNo || '',
+                        st.name || ''
+                    ];
 
                     cos.forEach((co, cidx) => {
-                        const coMax = co.criteria?.[0]?.maxMarks || 5;
                         const key = `${co.name}_C1`;
-                        const legacyKey = `CO${cidx + 1}_C1`;
+                        const legacyKey = co.name;
                         const rawVal = isAbsent ? null : (res?.coMarks?.[key] ?? res?.coMarks?.[legacyKey] ?? res?.coMarks?.[co.name] ?? null);
 
-                        let markVal = '-';
-                        let scoreVal = '-';
+                        if (rawVal !== null && rawVal !== undefined && !isNaN(parseFloat(rawVal))) {
+                            const val = parseFloat(rawVal);
+                            const maxM = co.criteria?.[0]?.maxMarks || 5;
+                            const scoreLevel = window.calculateCOScoreAndLevel ? window.calculateCOScoreAndLevel(val, maxM) : { score: 0 };
 
-                        if (!isAbsent && rawVal !== null && rawVal !== undefined) {
-                            const numericMark = parseFloat(rawVal) || 0;
-                            markVal = numericMark;
-                            const coRes = calculateCOScoreAndLevel(numericMark, coMax);
-                            scoreVal = coRes.score;
+                            row.push(val);
+                            row.push(scoreLevel.score);
 
-                            stTotalMarks += numericMark;
-                            stScoreSum += coRes.score;
-
-                            // Update stats
-                            coStats[cidx].totalMarks += numericMark;
-                            coStats[cidx].totalScores += coRes.score;
+                            coStats[cidx].totalMarks += val;
+                            coStats[cidx].totalScores += scoreLevel.score;
                             coStats[cidx].studentCount++;
-                            if (coRes.score === 3) coStats[cidx].highCount++;
-                            else if (coRes.score === 2) coStats[cidx].medCount++;
-                            else coStats[cidx].lowCount++;
-                        } else if (isAbsent) {
-                            markVal = 'AB';
-                            scoreVal = 'AB';
-                        }
 
-                        rowScores.push(markVal, scoreVal);
+                            studentTotalMarks += val;
+                            studentTotalScore += scoreLevel.score;
+                            studentCOCount++;
+                        } else {
+                            row.push(isAbsent ? 'AB' : '-');
+                            row.push(isAbsent ? '0.00' : '-');
+                        }
                     });
 
-                    const avgStudentScore = !isAbsent && cos.length > 0 ? (stScoreSum / cos.length).toFixed(2) : 'AB';
-                    const overallStudentLevel = !isAbsent ? (avgStudentScore >= 2.5 ? 'High' : (avgStudentScore >= 1.8 ? 'Medium' : 'Low')) : 'Absent';
+                    const overallStudentAvgMark = studentCOCount > 0 ? (studentTotalMarks / studentCOCount).toFixed(2) : '0.00';
+                    const overallStudentAvgScore = studentCOCount > 0 ? (studentTotalScore / studentCOCount).toFixed(2) : '0.00';
+                    const overallStudentLevel = parseFloat(overallStudentAvgScore) >= 2.5 ? 'Level 3 (High)' : (parseFloat(overallStudentAvgScore) >= 1.8 ? 'Level 2 (Medium)' : (studentCOCount > 0 ? 'Level 1 (Low)' : 'N/A'));
 
-                    aoa3.push([
-                        studentSrNo,
-                        student.enrollment || '',
-                        sanitizeString(student.name || ''),
-                        ...rowScores,
-                        isAbsent ? 'AB' : stTotalMarks.toFixed(1),
-                        avgStudentScore,
-                        overallStudentLevel
-                    ]);
+                    row.push(overallStudentAvgMark);
+                    row.push(overallStudentAvgScore);
+                    row.push(overallStudentLevel);
 
+                    aoa3.push(row);
                     studentSrNo++;
                 });
 
@@ -9644,28 +9626,15 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 const dWeight = cfg.directWeight / 100;
                 const iWeight = cfg.indirectWeight / 100;
 
-                // Summary Matrix Section
-                aoa3.push([]); // Spacer
+                aoa3.push([]);
                 aoa3.push(['DIRECT, INDIRECT & TOTAL CO ATTAINMENT SUMMARY MATRIX']);
-                aoa3.push([`Formula: Total Attainment = (Direct Attainment Score * ${cfg.directWeight}%) + (Indirect Attainment Score * ${cfg.indirectWeight}%)`]);
-                aoa3.push([
-                    'Course Outcome',
-                    'Max Mark',
-                    'Avg Mark Obtained',
-                    `Direct Attainment Score (/3) [${cfg.directWeight}%]`,
-                    `Indirect Attainment Score (/3) [${cfg.indirectWeight}%]`,
-                    'Total Attainment Score (/3)',
-                    'Final Total Attainment Level'
-                ]);
+                aoa3.push(['Course Outcome', 'Max Mark', 'Avg Mark Obtained', `Direct Score (${cfg.directWeight}%)`, `Indirect Score (${cfg.indirectWeight}%)`, 'Total Score (/3)', 'Final Level']);
 
-                let totalClassStudents = studentsSnap.size || 1;
-                let indirectMap = window.__coAttainmentData_teacher?.indirectAttainment 
-                    || window.__coAttainmentData_coord?.indirectAttainment 
-                    || window.__coAttainmentData_hod?.indirectAttainment;
+                let indirectMap = window.__coAttainmentData_teacher?.indirectAttainment || window.__coAttainmentData_coord?.indirectAttainment || window.__coAttainmentData_hod?.indirectAttainment;
 
                 if (!indirectMap && subjectData.id) {
                     try {
-                        const coAttDoc = await window.getDoc(window.doc(window.db, 'co_attainments', `${subjectData.id}_2025-26_SEM-1`));
+                        const coAttDoc = await window.getDoc(window.doc(window.db, 'co_attainments', `${subjectData.id}_${year}_${semester}`));
                         if (coAttDoc.exists() && coAttDoc.data().indirectAttainment) {
                             indirectMap = coAttDoc.data().indirectAttainment;
                         }
@@ -9673,69 +9642,52 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                         console.warn('Could not fetch indirect attainment doc for excel export:', e);
                     }
                 }
-                if (!indirectMap) {
-                    indirectMap = { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
-                }
 
                 coStats.forEach(st => {
-                    const count = st.studentCount || totalClassStudents;
+                    const count = st.studentCount || studentsSnap.size || 1;
                     const avgMark = count > 0 ? (st.totalMarks / count).toFixed(2) : '0.00';
                     const directScore = count > 0 ? parseFloat((st.totalScores / count).toFixed(2)) : 0;
-                    const indirectScore = parseFloat((indirectMap[st.coName] !== undefined ? indirectMap[st.coName] : 3.0).toFixed(2));
-                    const totalAttainmentScore = ((directScore * dWeight) + (indirectScore * iWeight)).toFixed(2);
-                    const finalTotalLevel = totalAttainmentScore >= 2.5 ? 'High (Level 3)' : (totalAttainmentScore >= 1.8 ? 'Medium (Level 2)' : 'Low (Level 1)');
+                    const hasIndirect = indirectMap && indirectMap[st.coName] !== undefined && indirectMap[st.coName] !== null;
+                    const indirectScore = hasIndirect ? parseFloat(indirectMap[st.coName].toFixed(2)) : 0;
+                    const totalAttainmentScore = hasIndirect ? ((directScore * dWeight) + (indirectScore * iWeight)).toFixed(2) : directScore.toFixed(2);
+                    const finalTotalLevel = parseFloat(totalAttainmentScore) >= 2.5 ? 'High (Level 3)' : (parseFloat(totalAttainmentScore) >= 1.8 ? 'Medium (Level 2)' : 'Low (Level 1)');
 
                     aoa3.push([
                         st.coName,
                         st.maxMark,
                         avgMark,
                         `${directScore.toFixed(2)} / 3`,
-                        `${indirectScore.toFixed(2)} / 3`,
+                        hasIndirect ? `${indirectScore.toFixed(2)} / 3` : 'Not Set',
                         `${totalAttainmentScore} / 3`,
                         finalTotalLevel
                     ]);
                 });
 
-                // Step 7: Gap Analysis Section
-                aoa3.push([]); // Spacer
+                aoa3.push([]);
                 aoa3.push(['STEP 7: COURSE OUTCOME (CO) ATTAINMENT GAP ANALYSIS']);
-                aoa3.push(['Formula: Gap = Current Total Attainment Score - Last Year/Sem Attainment Score']);
-                aoa3.push([
-                    'Course Outcome',
-                    'Current Attainment Score (/3)',
-                    'Last Year/Sem Attainment Score (/3)',
-                    'Attainment Gap (Current - Last Year)',
-                    'Status'
-                ]);
+                aoa3.push(['Course Outcome', 'Current Score (/3)', 'Previous Score (/3)', 'Gap', 'Status']);
 
-                const prevScoresMap = (window.__coAttainmentData_teacher?.previousAttainment 
-                    || window.__coAttainmentData_coord?.previousAttainment 
-                    || window.__coAttainmentData_hod?.previousAttainment 
-                    || { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 });
+                const prevScoresMap = (window.__coAttainmentData_teacher?.previousAttainment || window.__coAttainmentData_coord?.previousAttainment || window.__coAttainmentData_hod?.previousAttainment || null);
 
                 coStats.forEach(st => {
-                    const count = st.studentCount || totalClassStudents;
+                    const count = st.studentCount || studentsSnap.size || 1;
                     const directScore = count > 0 ? parseFloat((st.totalScores / count).toFixed(2)) : 0;
-                    const indirectScore = parseFloat((indirectMap[st.coName] !== undefined ? indirectMap[st.coName] : 3.0).toFixed(2));
-                    const currentScore = parseFloat(((directScore * dWeight) + (indirectScore * iWeight)).toFixed(2));
-                    const prevScore = parseFloat((prevScoresMap[st.coName] !== undefined ? prevScoresMap[st.coName] : 2.5).toFixed(2));
-                    const gap = parseFloat((currentScore - prevScore).toFixed(2));
+                    const hasIndirect = indirectMap && indirectMap[st.coName] !== undefined && indirectMap[st.coName] !== null;
+                    const indirectScore = hasIndirect ? parseFloat(indirectMap[st.coName].toFixed(2)) : 0;
+                    const currentScore = parseFloat((hasIndirect ? ((directScore * dWeight) + (indirectScore * iWeight)) : directScore).toFixed(2));
 
-                    const status = gap >= 0 ? `Target Met (+${gap.toFixed(2)})` : `Gap Identified (${gap.toFixed(2)})`;
-
-                    aoa3.push([
-                        st.coName,
-                        `${currentScore.toFixed(2)} / 3`,
-                        `${prevScore.toFixed(2)} / 3`,
-                        (gap >= 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)),
-                        status
-                    ]);
+                    const hasPrev = prevScoresMap && prevScoresMap[st.coName] !== undefined && prevScoresMap[st.coName] !== null;
+                    if (hasPrev) {
+                        const prevScore = parseFloat(Number(prevScoresMap[st.coName]).toFixed(2));
+                        const gap = parseFloat((currentScore - prevScore).toFixed(2));
+                        aoa3.push([st.coName, `${currentScore.toFixed(2)} / 3`, `${prevScore.toFixed(2)} / 3`, (gap >= 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)), gap >= 0 ? `Target Met` : `Gap Identified`]);
+                    } else {
+                        aoa3.push([st.coName, `${currentScore.toFixed(2)} / 3`, 'Not Recorded', '-', 'Baseline Pending']);
+                    }
                 });
 
                 const ws3 = XLSX.utils.aoa_to_sheet(aoa3);
-                const numCols3 = 3 + (cos.length * 2) + 3;
                 ws3['!cols'] = [
-                    { wch: 10 }, // Sr No
                     { wch: 18 }, // Enrollment No
                     { wch: 28 }, // Name of Student
                     ...coScoreHeaders.map(() => ({ wch: 14 })),
@@ -9813,7 +9765,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 const resultsMap = {};
                 resultsSnap.forEach(d => { resultsMap[d.data().studentId] = d.data(); });
 
-                const teacherName = window.currentUser?.name || 'Prof. Faculty';
+                const teacherName = window.currentUser?.name || 'Faculty Examiner';
+                const instituteName = (window.currentUser?.institute || subjectData.institute || 'UNIVERSAL STUDENT EVALUATION SYSTEM').toUpperCase();
+                const deptName = subjectData.department || window.currentUser?.department || 'Academic Department';
 
                 const cos = (examData.courseOutcomes && examData.courseOutcomes.length > 0) ? examData.courseOutcomes : [
                     { name: 'CO1', criteria: [{ maxMarks: 5 }] },
@@ -9833,34 +9787,29 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                 const csvLines = [];
 
-                csvLines.push(padRow(['MIT ADT University, School of Computing, Pune']));
-                csvLines.push(padRow(['Department of Computer Science and Engineering']));
-                const examTitle = examData.name || (examData.examType === 'ese' ? 'End Semester Examination May 2026' : 'Continuous Assessment Examination');
+                csvLines.push(padRow([instituteName]));
+                csvLines.push(padRow([deptName]));
+                const examTitle = examData.name || (examData.examType === 'ese' ? 'End Semester Examination' : 'Continuous Assessment Examination');
                 csvLines.push(padRow([examTitle]));
-                csvLines.push(padRow(['Jury Assessment Examination Mark Sheet']));
+                csvLines.push(padRow(['Student Evaluation Mark Sheet']));
                 csvLines.push(padRow([]));
 
-                csvLines.push(padRow(['Subject Code:', subjectData.code || '23CSE1103R', '', 'Subject Name:', subjectData.name || 'Jury Assessment Examination']));
-                csvLines.push(padRow(['Programme:', 'B.Tech', 'Year:', subjectData.class || 'FY', 'Semester:', subjectData.semester || 'SEM-II', 'Branch:', 'CSE/IT', 'Division:', subjectData.division || 'SOC-03']));
-                csvLines.push(padRow(['Batch:', subjectData.division || 'A', 'Date:', new Date().toLocaleDateString(), 'Time:', '9:00 am to 11:00 am']));
-                csvLines.push(padRow(['Internal Examiner:', teacherName, '', 'External Examiner:', 'External Jury Member & Institute']));
+                csvLines.push(padRow(['Subject Code:', subjectData.code || '', '', 'Subject Name:', subjectData.name || 'Course Assessment']));
+                csvLines.push(padRow(['Programme:', subjectData.programme || 'Degree Programme', 'Year/Class:', subjectData.class || '', 'Semester:', subjectData.semester || '', 'Branch:', subjectData.department || '', 'Division:', subjectData.division || '']));
+                csvLines.push(padRow(['Batch:', subjectData.batch || subjectData.division || '', 'Date:', new Date().toLocaleDateString()]));
+                csvLines.push(padRow(['Internal Examiner:', teacherName, '', 'External Examiner:', examData.externalExaminer || '']));
                 csvLines.push(padRow([]));
 
-                csvLines.push(padRow(['Criteria', 'Excellent (5-4 Marks)', 'Good (3 Marks)', 'Satisfactory (1-2 Marks)', 'Poor (0 Marks)']));
+                csvLines.push(padRow(['Criteria / Outcome', 'Excellent (80-100%)', 'Good (60-79%)', 'Satisfactory (40-59%)', 'Poor (<40%)']));
 
-                const defaultRubrics = [
-                    { name: 'CO1: Class, Object & Data Members', exc: 'Correct class created with proper data members and object creation', gd: 'Minor mistake in class/object', sat: 'Class created partially with missing members/object', pr: 'Class/object concept not implemented' },
-                    { name: 'CO2: Constructor & Function Implementation', exc: 'Constructor correctly initializes values and function performs required calculation', gd: 'Minor mistake in constructor or function logic', sat: 'Constructor/function partially implemented', pr: 'Constructor/function missing or incorrect' },
-                    { name: 'CO3: Inheritance & Function Overriding', exc: 'Correct inheritance and proper overriding of base class function in derived class', gd: 'Minor mistake in inheritance/overriding but concept works', sat: 'Inheritance used but overriding not properly shown', pr: 'Inheritance/overriding not implemented' },
-                    { name: 'CO4: Program Flow, Function Calling & Output', exc: 'All objects created, functions called correctly, and output is proper', gd: 'Minor mistake in calling or output format', sat: 'Partial function calling/output shown', pr: 'Program does not execute properly' },
-                    { name: 'CO5: Template Declaration', exc: 'Correct template function implemented and tested with required values', gd: 'Template works with minor syntax/logic issue', sat: 'Template partially implemented or tested incorrectly', pr: 'Template not used or incorrect' }
-                ];
-
-                cos.forEach((co, idx) => {
-                    const r = defaultRubrics[idx % defaultRubrics.length];
+                cos.forEach((co) => {
+                    const desc = co.description || `Assessment Criteria for ${co.name}`;
                     csvLines.push(padRow([
-                        `${co.name}: ${co.description || r.name.split(': ')[1] || 'Evaluation Criteria'}`,
-                        r.exc, r.gd, r.sat, r.pr
+                        `${co.name}: ${desc}`,
+                        'Thorough mastery & complete implementation with no conceptual errors',
+                        'Good demonstration of concept with minor non-critical inaccuracies',
+                        'Partial implementation with conceptual or logical gaps',
+                        'Unsatisfactory implementation or concept not demonstrated'
                     ]));
                 });
 
@@ -10010,7 +9959,8 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 }
 
                 showToast(`Added ${added} batch(es) successfully!`, "success");
-                document.getElementById('batchNamesInput').value = '';
+                const bInputEl = document.getElementById('batchNamesInput');
+                if (bInputEl) bInputEl.value = '';
                 loadClassesList();
             } catch (error) {
                 showToast('Error adding batch: ' + error.message, 'danger');
@@ -10485,9 +10435,14 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         }
 
         async function fetchAndRenderCOAttainment(role, forceRecalculate = false) {
-            const subjectId = document.getElementById(`${role}COAttainmentSubjectSelect`)?.value;
-            const year = document.getElementById(`${role}COAttainmentYear`)?.value || '2025-26';
-            const semester = document.getElementById(`${role}COAttainmentSem`)?.value || 'SEM-1';
+            const subjectId = document.getElementById(`${role}COAttainmentSubjectSelect`)?.value
+                           || document.getElementById(`${role}COVizSubjectSelect`)?.value;
+            const year = document.getElementById(`${role}COAttainmentYear`)?.value
+                      || document.getElementById(`${role}COVizYear`)?.value
+                      || '2025-26';
+            const semester = document.getElementById(`${role}COAttainmentSem`)?.value
+                         || document.getElementById(`${role}COVizSem`)?.value
+                         || 'SEM-1';
             const wrapper = document.getElementById(`${role}COAttainmentTableWrapper`);
             const statsContainer = document.getElementById(`${role}COAttainmentStats`);
             const summaryContainer = document.getElementById(`${role}COAttainmentSummaryMatrix`);
@@ -10497,12 +10452,12 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 return;
             }
 
-            wrapper.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto 10px;"></div>Loading student data and exam records...</div>';
+            if (wrapper) wrapper.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto 10px;"></div>Loading student data and exam records...</div>';
 
             try {
                 const subjectDoc = await window.getDoc(window.doc(window.db, 'subjects', subjectId));
                 if (!subjectDoc.exists()) {
-                    wrapper.innerHTML = '<div class="alert alert-danger">Subject not found.</div>';
+                    if (wrapper) wrapper.innerHTML = '<div class="alert alert-danger">Subject not found.</div>';
                     return;
                 }
                 const subjectData = subjectDoc.data();
@@ -10518,7 +10473,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 studentDocs.sort((a, b) => (a.data().rollNo || a.data().name).localeCompare(b.data().rollNo || b.data().name));
 
                 if (studentDocs.length === 0) {
-                    wrapper.innerHTML = `<div class="alert alert-warning">No students found for class ${subjectData.class} division ${subjectData.division}. Please import or add students first.</div>`;
+                    if (wrapper) wrapper.innerHTML = `<div class="alert alert-warning">No students found for class ${subjectData.class} division ${subjectData.division}. Please import or add students first.</div>`;
                     return;
                 }
 
@@ -10647,8 +10602,8 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 });
 
                 // Store window reference for live calculations
-                const indirectAttainment = savedIndirect || { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
-                const previousAttainment = savedPrevious || { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 };
+                const indirectAttainment = savedIndirect || { CO1: null, CO2: null, CO3: null, CO4: null, CO5: null };
+                const previousAttainment = savedPrevious || null;
                 window[`__coAttainmentData_${role}`] = {
                     subjectId, year, semester, students: studentsData, indirectAttainment, previousAttainment
                 };
@@ -10660,7 +10615,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 renderCOAttainmentMatrixTable(role);
             } catch (error) {
                 console.error('Error fetching CO attainment:', error);
-                wrapper.innerHTML = `<div class="alert alert-danger">Error fetching data: ${error.message}</div>`;
+                if (wrapper) wrapper.innerHTML = `<div class="alert alert-danger">Error fetching data: ${error.message}</div>`;
             }
         }
 
@@ -10669,7 +10624,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             if (!cardContainer) return;
 
             const dataObj = window[`__coAttainmentData_${role}`] || {};
-            const indirect = dataObj.indirectAttainment || { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
+            const indirect = dataObj.indirectAttainment || {};
 
             cardContainer.innerHTML = `
                 <div class="card" style="background:var(--bg-surface2);border:1px solid var(--border-md);border-radius:10px;padding:16px;">
@@ -10689,21 +10644,24 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     </div>
                     <div style="font-size:12px;color:var(--text-main);margin-bottom:12px;background:rgba(255,255,255,0.85);padding:8px 12px;border-radius:6px;border-left:4px solid #0284c7;">
                         <strong>Total Attainment Formula:</strong> <code>Total Attainment = (Direct Attainment Score × 0.8) + (Indirect Attainment Score × 0.2)</code>
-                        <br><small style="color:var(--gray-600);">* Teachers can enter Indirect Attainment scores (0 to 3 marks) per CO below or import from Excel.</small>
+                        <br><small style="color:var(--gray-600);">* Enter actual Indirect Attainment survey scores (0.0 to 3.0) per CO below or upload from Excel.</small>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;">
-                        ${['CO1','CO2','CO3','CO4','CO5'].map(co => `
+                        ${['CO1','CO2','CO3','CO4','CO5'].map(co => {
+                            const val = (indirect[co] !== undefined && indirect[co] !== null) ? Number(indirect[co]).toFixed(1) : '';
+                            return `
                             <div style="background:#fff;padding:10px;border-radius:8px;border:1px solid var(--border-lt);text-align:center;">
                                 <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;color:var(--primary);">${co} Indirect</label>
                                 <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
                                     <input type="number" id="${role}_indirect_${co}" min="0" max="3" step="0.1" 
-                                        value="${(indirect[co] !== undefined ? indirect[co] : 3.0).toFixed(1)}" 
-                                        style="width:65px;text-align:center;font-weight:700;padding:4px 6px;border-radius:4px;border:1px solid var(--border-md);"
+                                        value="${val}" 
+                                        placeholder="0.0 - 3.0"
+                                        style="width:80px;text-align:center;font-weight:700;padding:4px 6px;border-radius:4px;border:1px solid var(--border-md);"
                                         onchange="onIndirectAttainmentInputChanged('${role}', '${co}')">
                                     <span style="font-size:11px;color:var(--gray-500);">/ 3</span>
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 </div>
             `;
@@ -10717,17 +10675,17 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
             const rows = [
                 ['UNIVERSAL STUDENT EVALUATION SYSTEM - INDIRECT CO ATTAINMENT TEMPLATE'],
-                ['Instructions: Enter Indirect Attainment Score (Scale: 0 to 3) for each Course Outcome.'],
+                ['Instructions: Enter actual Indirect Attainment survey scores (Scale: 0.0 to 3.0) for each Course Outcome.'],
                 [''],
-                ['Course Outcome', 'CO Description / Details', 'Indirect Attainment Score (0 - 3)'],
-                ['CO1', 'Class & Object Implementation', 3.0],
-                ['CO2', 'Constructor & Functions Usage', 3.0],
-                ['CO3', 'Inheritance & Polymorphism', 3.0],
-                ['CO4', 'Program Structure & Logic', 3.0],
-                ['CO5', 'Templates & Exception Handling', 3.0]
+                ['Course Outcome', 'CO Description / Target Criteria', 'Indirect Attainment Score (0 - 3)'],
+                ['CO1', 'Course Outcome 1 Survey / Feedback Score', ''],
+                ['CO2', 'Course Outcome 2 Survey / Feedback Score', ''],
+                ['CO3', 'Course Outcome 3 Survey / Feedback Score', ''],
+                ['CO4', 'Course Outcome 4 Survey / Feedback Score', ''],
+                ['CO5', 'Course Outcome 5 Survey / Feedback Score', '']
             ];
             const ws = XLSX.utils.aoa_to_sheet(rows);
-            ws['!cols'] = [{ wch: 18 }, { wch: 36 }, { wch: 30 }];
+            ws['!cols'] = [{ wch: 18 }, { wch: 42 }, { wch: 30 }];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Indirect Attainment');
             XLSX.writeFile(wb, 'Indirect_CO_Attainment_Template.xlsx');
@@ -10758,7 +10716,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     const dataObj = window[`__coAttainmentData_${role}`] || {};
                     if (!dataObj.indirectAttainment) {
-                        dataObj.indirectAttainment = { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
+                        dataObj.indirectAttainment = {};
                     }
 
                     let countFound = 0;
@@ -10786,11 +10744,11 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     ['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].forEach(co => {
                         const inputEl = document.getElementById(`${role}_indirect_${co}`);
-                        if (inputEl) inputEl.value = (dataObj.indirectAttainment[co] || 3.0).toFixed(1);
+                        if (inputEl) inputEl.value = (dataObj.indirectAttainment[co] !== undefined && dataObj.indirectAttainment[co] !== null) ? Number(dataObj.indirectAttainment[co]).toFixed(1) : '';
                     });
 
                     recalculateAllCOAttainmentAverages(role);
-                    showToast(`📥 Imported Indirect Attainment for ${countFound} COs successfully! Total Attainment updated (80% Direct + 20% Indirect).`, 'success', 5000);
+                    showToast(`📥 Imported Indirect Attainment for ${countFound} COs successfully!`, 'success', 5000);
                 } catch (err) {
                     console.error('Error reading Indirect Attainment Excel:', err);
                     showToast('Failed to parse Excel file: ' + err.message, 'danger');
@@ -10807,7 +10765,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             if (!dataObj) return;
 
             if (!dataObj.indirectAttainment) {
-                dataObj.indirectAttainment = { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
+                dataObj.indirectAttainment = {};
             }
 
             const inputEl = document.getElementById(`${role}_indirect_${co}`);
@@ -10919,7 +10877,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             </tr>`;
 
             html += `</tbody></table></div>`;
-            wrapper.innerHTML = html;
+            if (wrapper) wrapper.innerHTML = html;
 
             recalculateAllCOAttainmentAverages(role);
         }
@@ -11077,7 +11035,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             // Update Class Attainment Summary Matrix Table
             const summaryContainer = document.getElementById(`${role}COAttainmentSummaryMatrix`);
             if (summaryContainer) {
-                const indirectMap = dataObj.indirectAttainment || { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
+                const indirectMap = dataObj.indirectAttainment || {};
                 const cfg = window.attainmentFormulaConfig || { directWeight: 80, indirectWeight: 20, highPct: 70, medPct: 60 };
                 const dWeight = cfg.directWeight / 100;
                 const iWeight = cfg.indirectWeight / 100;
@@ -11111,8 +11069,11 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 cos.forEach(co => {
                     const avgMark = (sums[co].Total / count).toFixed(2);
                     const directScore = parseFloat((sums[co].Score / count).toFixed(2));
-                    const indirectScore = parseFloat((indirectMap[co] !== undefined ? indirectMap[co] : 3.0).toFixed(2));
-                    const totalAttainmentScore = ((directScore * dWeight) + (indirectScore * iWeight)).toFixed(2);
+                    const hasIndirect = indirectMap[co] !== undefined && indirectMap[co] !== null && !isNaN(parseFloat(indirectMap[co]));
+                    const indirectScore = hasIndirect ? parseFloat(Number(indirectMap[co]).toFixed(2)) : null;
+                    const totalAttainmentScore = hasIndirect 
+                        ? ((directScore * dWeight) + (indirectScore * iWeight)).toFixed(2) 
+                        : directScore.toFixed(2);
 
                     const totalLevel = totalAttainmentScore >= 2.5 ? 'High (Level 3)' : (totalAttainmentScore >= 1.8 ? 'Medium (Level 2)' : 'Low (Level 1)');
                     const badgeClass = totalAttainmentScore >= 2.5 ? 'badge-attainment-high' : (totalAttainmentScore >= 1.8 ? 'badge-attainment-medium' : 'badge-attainment-low');
@@ -11123,7 +11084,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                             <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;">10</td>
                             <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:700;">${avgMark}</td>
                             <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:700;color:#1d4ed8;background:#f8fafc;">${directScore.toFixed(2)} / 3</td>
-                            <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:700;color:#15803d;background:#f8fafc;">${indirectScore.toFixed(2)} / 3</td>
+                            <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:700;color:#15803d;background:#f8fafc;">${hasIndirect ? `${indirectScore.toFixed(2)} / 3` : '<span style="color:#94a3b8;font-style:italic;">Not Set</span>'}</td>
                             <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:900;font-size:14px;color:#a16207;background:#fffbeb;">${totalAttainmentScore} / 3</td>
                             <td style="padding:8px 12px;border:1px solid var(--border-lt);text-align:center;"><span class="${badgeClass}">${totalLevel}</span></td>
                         </tr>
@@ -11180,8 +11141,8 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                     academicYear: year,
                     semester,
                     studentsMap,
-                    indirectAttainment: dataObj.indirectAttainment || { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 },
-                    previousAttainment: dataObj.previousAttainment || { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 },
+                    indirectAttainment: dataObj.indirectAttainment || null,
+                    previousAttainment: dataObj.previousAttainment || null,
                     updatedAt: new Date().toISOString(),
                     updatedBy: window.currentUser ? window.currentUser.uid : 'system'
                 });
@@ -11201,7 +11162,6 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
         function renderCOAttainmentVisualizations(role) {
             const dataObj = window[`__coAttainmentData_${role}`];
-            if (!dataObj) return;
 
             let vizContainer = document.getElementById(`${role}COAttainmentVisualizationContainer`);
             if (!vizContainer) {
@@ -11216,8 +11176,17 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 }
             }
 
+            if (!dataObj || !dataObj.students || dataObj.students.length === 0) {
+                vizContainer.innerHTML = `<div class="card" style="padding:30px;text-align:center;color:var(--text-secondary);border:1px solid var(--border-lt);border-radius:10px;background:var(--bg-surface);">
+                    <div style="font-size:36px;margin-bottom:10px;">📈</div>
+                    <h4 style="margin:0 0 6px 0;color:var(--primary);">No Attainment Visualization Data Loaded</h4>
+                    <p style="margin:0;font-size:13px;">Please select a subject with active student records to display Course Outcome visual analytics and charts.</p>
+                </div>`;
+                return;
+            }
+
             const cos = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5'];
-            const indirectMap = dataObj.indirectAttainment || { CO1: 3.0, CO2: 3.0, CO3: 3.0, CO4: 3.0, CO5: 3.0 };
+            const indirectMap = dataObj.indirectAttainment || {};
 
             const cfg = window.attainmentFormulaConfig || { directWeight: 80, indirectWeight: 20, highPct: 70, medPct: 60 };
             const dWeight = cfg.directWeight / 100;
@@ -11240,8 +11209,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 });
 
                 const dScore = parseFloat((scoreSum / count).toFixed(2));
-                const iScore = parseFloat((indirectMap[co] !== undefined ? indirectMap[co] : 3.0).toFixed(2));
-                const tScore = parseFloat(((dScore * dWeight) + (iScore * iWeight)).toFixed(2));
+                const hasIndirect = indirectMap[co] !== undefined && indirectMap[co] !== null && !isNaN(parseFloat(indirectMap[co]));
+                const iScore = hasIndirect ? parseFloat(Number(indirectMap[co]).toFixed(2)) : 0;
+                const tScore = parseFloat((hasIndirect ? ((dScore * dWeight) + (iScore * iWeight)) : dScore).toFixed(2));
 
                 directScores.push(dScore);
                 indirectScores.push(iScore);
@@ -11341,24 +11311,37 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                                 <tbody>
                                     ${cos.map((co, idx) => {
                                         const cScore = totalScores[idx];
-                                        const prevMap = dataObj.previousAttainment || { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 };
-                                        const pScore = parseFloat((prevMap[co] !== undefined ? prevMap[co] : 2.5).toFixed(2));
-                                        const gap = parseFloat((cScore - pScore).toFixed(2));
-                                        const isTargetMet = gap >= 0;
+                                        const prevMap = dataObj.previousAttainment;
+                                        const hasPrev = prevMap && prevMap[co] !== undefined && prevMap[co] !== null && !isNaN(parseFloat(prevMap[co]));
 
-                                        const statusBadge = isTargetMet 
-                                            ? `<span class="badge badge-success" style="background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:6px;font-weight:700;">Target Met (+${gap.toFixed(2)})</span>`
-                                            : `<span class="badge badge-danger" style="background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:6px;font-weight:700;">Gap Identified (${gap.toFixed(2)})</span>`;
+                                        if (hasPrev) {
+                                            const pScore = parseFloat(Number(prevMap[co]).toFixed(2));
+                                            const gap = parseFloat((cScore - pScore).toFixed(2));
+                                            const isTargetMet = gap >= 0;
+                                            const statusBadge = isTargetMet 
+                                                ? `<span class="badge badge-success" style="background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:6px;font-weight:700;">Target Met (+${gap.toFixed(2)})</span>`
+                                                : `<span class="badge badge-danger" style="background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:6px;font-weight:700;">Gap Identified (${gap.toFixed(2)})</span>`;
 
-                                        return `
-                                            <tr>
-                                                <td style="padding:10px 12px;border:1px solid var(--border-lt);font-weight:700;">${co}</td>
-                                                <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:800;color:#1e40af;">${cScore.toFixed(2)} / 3</td>
-                                                <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:600;color:#475569;">${pScore.toFixed(2)} / 3</td>
-                                                <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:800;color:${isTargetMet ? '#15803d' : '#b91c1c'};">${isTargetMet ? '+' : ''}${gap.toFixed(2)}</td>
-                                                <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;">${statusBadge}</td>
-                                            </tr>
-                                        `;
+                                            return `
+                                                <tr>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);font-weight:700;">${co}</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:800;color:#1e40af;">${cScore.toFixed(2)} / 3</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:600;color:#475569;">${pScore.toFixed(2)} / 3</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:800;color:${isTargetMet ? '#15803d' : '#b91c1c'};">${isTargetMet ? '+' : ''}${gap.toFixed(2)}</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;">${statusBadge}</td>
+                                                </tr>
+                                            `;
+                                        } else {
+                                            return `
+                                                <tr>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);font-weight:700;">${co}</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;font-weight:800;color:#1e40af;">${cScore.toFixed(2)} / 3</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;color:#94a3b8;font-style:italic;">Not Set</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;color:#94a3b8;">-</td>
+                                                    <td style="padding:10px 12px;border:1px solid var(--border-lt);text-align:center;"><span class="badge" style="background:#f1f5f9;color:#64748b;padding:4px 8px;border-radius:6px;font-weight:600;">Baseline Pending</span></td>
+                                                </tr>
+                                            `;
+                                        }
                                     }).join('')}
                                 </tbody>
                             </table>
@@ -11374,7 +11357,8 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
         window.renderCOAttainmentVisualizations = renderCOAttainmentVisualizations;
 
         function initCOCharts(role, cos, directScores, indirectScores, totalScores, levelsCount) {
-            if (typeof Chart === 'undefined') {
+            const ChartLib = window.Chart || (typeof Chart !== 'undefined' ? Chart : null);
+            if (!ChartLib) {
                 console.warn('Chart.js library not loaded.');
                 return;
             }
@@ -11385,8 +11369,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const roleCharts = window.__coCharts[role];
 
             const dataObj = window[`__coAttainmentData_${role}`] || {};
-            const prevScores = dataObj.previousAttainment || { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 };
-            const prevArray = cos.map(co => prevScores[co] !== undefined ? prevScores[co] : 2.5);
+            const prevScores = dataObj.previousAttainment || null;
+            const hasPrev = prevScores && cos.some(co => prevScores[co] !== undefined && prevScores[co] !== null);
+            const prevArray = cos.map(co => (prevScores && prevScores[co] !== undefined && prevScores[co] !== null) ? Number(prevScores[co]) : 0);
 
             const cfg = window.attainmentFormulaConfig || { directWeight: 80, indirectWeight: 20, highPct: 70, medPct: 60 };
 
@@ -11394,7 +11379,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const barCanvas = document.getElementById(`${role}COAttainmentBarCanvas`);
             if (barCanvas) {
                 if (roleCharts.bar) roleCharts.bar.destroy();
-                roleCharts.bar = new Chart(barCanvas.getContext('2d'), {
+                roleCharts.bar = new ChartLib(barCanvas.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: cos,
@@ -11418,7 +11403,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const radarCanvas = document.getElementById(`${role}COAttainmentRadarCanvas`);
             if (radarCanvas) {
                 if (roleCharts.radar) roleCharts.radar.destroy();
-                roleCharts.radar = new Chart(radarCanvas.getContext('2d'), {
+                roleCharts.radar = new ChartLib(radarCanvas.getContext('2d'), {
                     type: 'radar',
                     data: {
                         labels: cos,
@@ -11447,7 +11432,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const pieCanvas = document.getElementById(`${role}COAttainmentPieCanvas`);
             if (pieCanvas) {
                 if (roleCharts.pie) roleCharts.pie.destroy();
-                roleCharts.pie = new Chart(pieCanvas.getContext('2d'), {
+                roleCharts.pie = new ChartLib(pieCanvas.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         labels: ['High (Level 3: >=2.5)', 'Medium (Level 2: 1.8-2.4)', 'Low (Level 1: <1.8)'],
@@ -11468,14 +11453,21 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             const compCanvas = document.getElementById(`${role}COAttainmentCompCanvas`);
             if (compCanvas) {
                 if (roleCharts.comparison) roleCharts.comparison.destroy();
-                roleCharts.comparison = new Chart(compCanvas.getContext('2d'), {
+
+                const compDatasets = [
+                    { label: 'Current Sem Attainment', data: totalScores, backgroundColor: '#4f46e5' }
+                ];
+                if (hasPrev) {
+                    compDatasets.push({ label: 'Last Year/Sem Benchmark', data: prevArray, backgroundColor: '#9ca3af' });
+                } else {
+                    compDatasets.push({ label: 'Benchmark (Not Set - Upload to compare)', data: prevArray, backgroundColor: 'rgba(209, 213, 219, 0.3)' });
+                }
+
+                roleCharts.comparison = new ChartLib(compCanvas.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: cos,
-                        datasets: [
-                            { label: 'Current Sem Attainment', data: totalScores, backgroundColor: '#4f46e5' },
-                            { label: 'Last Year/Sem Benchmark', data: prevArray, backgroundColor: '#9ca3af' }
-                        ]
+                        datasets: compDatasets
                     },
                     options: {
                         responsive: true,
@@ -11495,17 +11487,17 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             }
             const rows = [
                 ['UNIVERSAL STUDENT EVALUATION SYSTEM - HISTORICAL (LAST YEAR/SEM) CO ATTAINMENT TEMPLATE'],
-                ['Instructions: Enter previous semester or last year Total CO Attainment Scores (Scale: 0 to 3) for comparison.'],
+                ['Instructions: Enter previous semester or last year Total CO Attainment Scores (Scale: 0.0 to 3.0) for comparative analysis.'],
                 [''],
-                ['Course Outcome', 'Academic Period / Details', 'Previous Total Attainment Score (0 - 3)'],
-                ['CO1', '2024-25 SEM-1 / Prev Batch', 2.4],
-                ['CO2', '2024-25 SEM-1 / Prev Batch', 2.5],
-                ['CO3', '2024-25 SEM-1 / Prev Batch', 2.2],
-                ['CO4', '2024-25 SEM-1 / Prev Batch', 2.6],
-                ['CO5', '2024-25 SEM-1 / Prev Batch', 2.4]
+                ['Course Outcome', 'Academic Period / Term Description', 'Previous Total Attainment Score (0 - 3)'],
+                ['CO1', 'Previous Semester / Batch Baseline', ''],
+                ['CO2', 'Previous Semester / Batch Baseline', ''],
+                ['CO3', 'Previous Semester / Batch Baseline', ''],
+                ['CO4', 'Previous Semester / Batch Baseline', ''],
+                ['CO5', 'Previous Semester / Batch Baseline', '']
             ];
             const ws = XLSX.utils.aoa_to_sheet(rows);
-            ws['!cols'] = [{ wch: 18 }, { wch: 36 }, { wch: 34 }];
+            ws['!cols'] = [{ wch: 18 }, { wch: 38 }, { wch: 34 }];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Previous Attainment');
             XLSX.writeFile(wb, 'Previous_Year_CO_Attainment_Template.xlsx');
@@ -11536,7 +11528,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
 
                     const dataObj = window[`__coAttainmentData_${role}`] || {};
                     if (!dataObj.previousAttainment) {
-                        dataObj.previousAttainment = { CO1: 2.4, CO2: 2.5, CO3: 2.2, CO4: 2.6, CO5: 2.4 };
+                        dataObj.previousAttainment = {};
                     }
 
                     let countFound = 0;
@@ -11585,18 +11577,46 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             selectEl.innerHTML = '<option value="">Select Subject</option>';
 
             try {
-                let q = window.collection(window.db, 'subjects');
-                if (role === 'hod' && window.currentUser?.department) {
-                    q = window.query(q, window.where('department', '==', window.currentUser.department));
+                if (role === 'teacher' && window.currentUser) {
+                    const assignSnap = await window.getDocs(window.query(
+                        window.collection(window.db, 'teacher_assignments'),
+                        window.where('teacherEmail', '==', window.currentUser.email)
+                    ));
+                    const subjectIds = [];
+                    assignSnap.forEach(d => {
+                        const data = d.data();
+                        if (data.subjectId) subjectIds.push(data.subjectId);
+                    });
+                    if (subjectIds.length > 0) {
+                        const chunks = [];
+                        for (let i = 0; i < subjectIds.length; i += 30) chunks.push(subjectIds.slice(i, i + 30));
+                        const allSubjectDocs = [];
+                        for (const chunk of chunks) {
+                            const snap = await window.getDocs(window.query(window.collection(window.db, 'subjects'), window.where('__name__', 'in', chunk)));
+                            snap.forEach(d => allSubjectDocs.push(d));
+                        }
+                        allSubjectDocs.forEach(docSnap => {
+                            const data = docSnap.data();
+                            const opt = document.createElement('option');
+                            opt.value = docSnap.id;
+                            opt.textContent = `${data.name} (${data.code || ''}) - ${data.class || ''} ${data.division || ''}`;
+                            selectEl.appendChild(opt);
+                        });
+                    }
+                } else {
+                    let q = window.collection(window.db, 'subjects');
+                    if (role === 'hod' && window.currentUser?.department) {
+                        q = window.query(q, window.where('department', '==', window.currentUser.department));
+                    }
+                    const subjectsSnap = await window.getDocs(q);
+                    subjectsSnap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `${data.name} (${data.code || ''}) - ${data.class || ''} ${data.division || ''}`;
+                        selectEl.appendChild(opt);
+                    });
                 }
-                const subjectsSnap = await window.getDocs(q);
-                subjectsSnap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const opt = document.createElement('option');
-                    opt.value = docSnap.id;
-                    opt.textContent = `${data.name} (${data.code || ''}) - ${data.class || ''} ${data.division || ''}`;
-                    selectEl.appendChild(opt);
-                });
 
                 if (selectEl.options.length > 1) {
                     selectEl.selectedIndex = 1;
@@ -11621,7 +11641,7 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             try {
                 await loadAttainmentFormulaConfig();
                 const dataObj = window[`__coAttainmentData_${role}`];
-                if (!dataObj || dataObj.subjectId !== subjectId) {
+                if (!dataObj || dataObj.subjectId !== subjectId || dataObj.year !== year || dataObj.semester !== semester) {
                     await fetchAndRenderCOAttainment(role);
                 }
                 renderCOAttainmentVisualizations(role);
@@ -11699,18 +11719,46 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
             examSelect.innerHTML = '<option value="">Select Exam</option>';
 
             try {
-                let q = window.collection(window.db, 'subjects');
-                if (role === 'hod' && window.currentUser?.department) {
-                    q = window.query(q, window.where('department', '==', window.currentUser.department));
+                if (role === 'teacher' && window.currentUser) {
+                    const assignSnap = await window.getDocs(window.query(
+                        window.collection(window.db, 'teacher_assignments'),
+                        window.where('teacherEmail', '==', window.currentUser.email)
+                    ));
+                    const subjectIds = [];
+                    assignSnap.forEach(d => {
+                        const data = d.data();
+                        if (data.subjectId) subjectIds.push(data.subjectId);
+                    });
+                    if (subjectIds.length > 0) {
+                        const chunks = [];
+                        for (let i = 0; i < subjectIds.length; i += 30) chunks.push(subjectIds.slice(i, i + 30));
+                        const allSubjectDocs = [];
+                        for (const chunk of chunks) {
+                            const snap = await window.getDocs(window.query(window.collection(window.db, 'subjects'), window.where('__name__', 'in', chunk)));
+                            snap.forEach(d => allSubjectDocs.push(d));
+                        }
+                        allSubjectDocs.forEach(docSnap => {
+                            const data = docSnap.data();
+                            const opt = document.createElement('option');
+                            opt.value = docSnap.id;
+                            opt.textContent = `${data.name} (${data.code || ''}) - Div ${data.division || ''}`;
+                            subjSelect.appendChild(opt);
+                        });
+                    }
+                } else {
+                    let q = window.collection(window.db, 'subjects');
+                    if (role === 'hod' && window.currentUser?.department) {
+                        q = window.query(q, window.where('department', '==', window.currentUser.department));
+                    }
+                    const subjectsSnap = await window.getDocs(q);
+                    subjectsSnap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = `${data.name} (${data.code || ''}) - Div ${data.division || ''}`;
+                        subjSelect.appendChild(opt);
+                    });
                 }
-                const subjectsSnap = await window.getDocs(q);
-                subjectsSnap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const opt = document.createElement('option');
-                    opt.value = docSnap.id;
-                    opt.textContent = `${data.name} (${data.code || ''}) - Div ${data.division || ''}`;
-                    subjSelect.appendChild(opt);
-                });
 
                 if (subjSelect.options.length > 1) {
                     subjSelect.selectedIndex = 1;
@@ -11746,6 +11794,9 @@ ${teacherId ? `<button class="btn btn-sm ${isActive ? 'btn-off' : 'btn-on'}" onc
                 if (examSelect.options.length > 1) {
                     examSelect.selectedIndex = 1;
                 }
+
+                await fetchAndRenderCOAttainment(role);
+                renderCOAttainmentVisualizations(role);
             } catch (e) {
                 console.error("Error loading exams for subject:", e);
             }
