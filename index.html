@@ -8,6 +8,86 @@
     <meta name="description" content="Evaluator - High Performance Student Evaluation System">
     <title>Evaluator - Pro Student Assessment</title>
 
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- ASG Offline SDK -->
+    <script src="https://asgweboffline.onrender.com/sdk/asg-offline.js" 
+      data-app-id="evaluator-mit-netlify-app-offline" 
+      data-api-key="asg_live_d7aeed263f6d5f0ed4ebcdbcee89da03d52c91813a1d0932" 
+      data-server-url="https://asgweboffline.onrender.com"
+      data-sw-url="./asg-sw.js"
+      data-sw-path="./asg-sw.js">
+    </script>
+
+    <script>
+      // Register local Service Worker same-origin proxy
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./asg-sw.js', { scope: './' })
+          .then(reg => console.log('🟢 [ASG SW] Local ServiceWorker registered successfully:', reg.scope))
+          .catch(err => console.warn('⚠️ [ASG SW] Local ServiceWorker registration note:', err));
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        if (!window.ASGOffline) return;
+
+        // 1. React to online/offline changes
+        window.ASGOffline.onStatusChange((isOnline) => {
+          console.log(isOnline
+            ? '🟢 [evaluator-mit.netlify.app] Back online — syncing queued operations...'
+            : '📡 [evaluator-mit.netlify.app] Offline mode active — ops queued in IndexedDB');
+        });
+
+        // 2. Listen for reconciliation events (local DB updated with server truth)
+        window.addEventListener('asg:reconciled', (e) => {
+          console.log('[ASG] Reconciled:', e.detail.collection, e.detail.recordId);
+          // Re-render UI with fresh data if functions exist
+          if (typeof window.loadDashboardData === 'function') {
+            window.loadDashboardData();
+          }
+        });
+
+        // 3. Register Evaluator Core Routes for offline classification
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/users',           mode: 'LOCAL_SAFE',     collection: 'users' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/users',           mode: 'LOCAL_SAFE',     collection: 'users' });
+        window.ASGOffline.registerRoute({ method: 'PUT',    path: '/api/users/:id',       mode: 'DEFERRED',       collection: 'users' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/students',        mode: 'LOCAL_SAFE',     collection: 'students' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/students',        mode: 'LOCAL_SAFE',     collection: 'students' });
+        window.ASGOffline.registerRoute({ method: 'PUT',    path: '/api/students/:id',    mode: 'DEFERRED',       collection: 'students' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/subjects',        mode: 'LOCAL_SAFE',     collection: 'subjects' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/subjects',        mode: 'LOCAL_SAFE',     collection: 'subjects' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/classes',         mode: 'LOCAL_SAFE',     collection: 'classes' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/classes',         mode: 'LOCAL_SAFE',     collection: 'classes' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/divisions',       mode: 'LOCAL_SAFE',     collection: 'divisions' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/divisions',       mode: 'LOCAL_SAFE',     collection: 'divisions' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/batches',         mode: 'LOCAL_SAFE',     collection: 'batches' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/batches',         mode: 'LOCAL_SAFE',     collection: 'batches' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/exams',           mode: 'LOCAL_SAFE',     collection: 'exams' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/exams',           mode: 'LOCAL_SAFE',     collection: 'exams' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/results',         mode: 'LOCAL_SAFE',     collection: 'results' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/results',         mode: 'DEFERRED',       collection: 'results' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/co_attainments',  mode: 'LOCAL_SAFE',     collection: 'co_attainments' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/co_attainments',  mode: 'DEFERRED',       collection: 'co_attainments' });
+        window.ASGOffline.registerRoute({ method: 'GET',    path: '/api/departments',     mode: 'LOCAL_SAFE',     collection: 'departments' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/departments',     mode: 'LOCAL_SAFE',     collection: 'departments' });
+        window.ASGOffline.registerRoute({ method: 'POST',   path: '/api/audit_logs',      mode: 'DEFERRED',       collection: 'audit_logs' });
+
+        // 4. 1-Line App API wrappers pointing to real backend
+        window.app = {
+          save:       (col, data)         => window.ASGOffline.save(col, data),
+          update:     (col, id, delta)    => window.ASGOffline.update(col, id, delta),
+          delete:     (col, id)           => window.ASGOffline.delete(col, id),
+          find:       (col)               => window.ASGOffline.find(col),
+          post:       (path, body)        => window.ASGOffline.syncPost('https://evaluator-mit.netlify.app/' + path, body),
+          put:        (path, body)        => window.ASGOffline.syncPut('https://evaluator-mit.netlify.app/' + path, body),
+          del:        (path, body)        => window.ASGOffline.syncDelete('https://evaluator-mit.netlify.app/' + path, body),
+          fetch:      (path, opts)        => window.ASGOffline.fetch('https://evaluator-mit.netlify.app/' + path, opts)
+        };
+
+        console.log('⚡ ASG Offline Engine ready for evaluator-mit.netlify.app — App ID: evaluator-mit-netlify-app-offline');
+      });
+    </script>
+
     <!-- UI/UX Assets -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +100,8 @@
         onerror="this.onerror=null;this.src='lib/pdf.min.js'"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
         onerror="this.onerror=null;this.src='lib/xlsx.full.min.js'"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"
+        onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'"></script>
 
     <!-- Firebase SDK (Official Google CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"
@@ -874,8 +955,7 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);">Dr.
-                                                Smith</td>
+                                            <td style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);">Faculty Name</td>
                                             <td style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);">A</td>
                                             <td
                                                 style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);text-align:center;">
@@ -887,7 +967,7 @@
                                                 style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);text-align:center;">
                                             </td>
                                             <td style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);">
-                                                smith@college.edu</td>
+                                                faculty@institute.edu</td>
                                             <td style="padding:5px 10px;border:1px solid rgba(79,70,229,0.15);">
                                                 9876543210</td>
                                         </tr>
