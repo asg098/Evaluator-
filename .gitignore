@@ -4,4 +4,4 @@ service-account.json
 node_modules/
 *.xlsx
 *.csv
-
+scratch/
