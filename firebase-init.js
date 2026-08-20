@@ -53,15 +53,13 @@
     }
     window.secondaryAuth = secondaryAuth;
 
-    // Initialize Firestore with settings merging to avoid host override warnings
+    // LOW-10 FIX: Removed experimentalForceLongPolling — it was intended for file:// environments
+    // but adds unnecessary overhead in a proper web server deployment.
+    // Firestore will use WebSockets by default which is more efficient.
     try {
-        db.settings({ 
-            experimentalForceLongPolling: true
-        });
+        db.settings({ merge: true });
     } catch (e) {
-        if (!e.message.includes('already been used') && !e.message.includes('settings')) {
-            console.warn("Firestore settings check:", e.message);
-        }
+        // Settings already applied — safe to ignore
     }
 
     // Global references for app.js
@@ -196,6 +194,13 @@
                 if (typeof window.showToast === 'function' && this.getQueue().length > 0) {
                     window.showToast('You are offline. Cannot sync yet.', 'warning');
                 }
+                return;
+            }
+
+            // LOW-08 FIX: Only replay queue if a valid user session exists.
+            // Prevents stale operations from a previous user's session being replayed.
+            if (!window.currentUser) {
+                console.log('[Sync] No active user session — skipping queue replay.');
                 return;
             }
             
@@ -383,23 +388,27 @@
     window.failedLoginAttempts = new Map();
 
     window.logFailedLogin = async function(email, errorCode) {
+        // LOW-07 FIX: Always increment the in-memory counter FIRST, before any Firestore write.
+        // This ensures the lockout counter works even if Firestore security rules block
+        // unauthenticated writes to the failed_logins collection.
+        const attempts = (window.failedLoginAttempts.get(email) || 0) + 1;
+        window.failedLoginAttempts.set(email, attempts);
+
         try {
             await window.addDoc(window.collection(window.db, 'failed_logins'), {
                 email: email,
                 errorCode: errorCode,
+                attempts: attempts,
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent
             });
-            const attempts = (window.failedLoginAttempts.get(email) || 0) + 1;
-            window.failedLoginAttempts.set(email, attempts);
-            return attempts;
         } catch (error) {
-            // Permission errors are expected if rules block unauthenticated writes to failed_logins
+            // Firestore write failure is non-fatal — the in-memory counter is authoritative.
             if (!error.message.includes('permissions')) {
-                console.error('Error logging failed login:', error);
+                console.error('Error logging failed login to Firestore:', error);
             }
-            return 0;
         }
+        return attempts;
     };
 
     window.clearFailedAttempts = async function(email) {
@@ -571,21 +580,9 @@
         }
     };
 
-    window.logAuditEvent = async function(action, details = {}) {
-        try {
-            await window.addDoc(window.collection(window.db, 'audit_logs'), {
-                action: action,
-                performedBy: window.currentUser?.uid || 'anonymous',
-                performedByName: window.currentUser?.name || 'Anonymous',
-                performedByRole: window.currentUser?.role || 'none',
-                timestamp: new Date().toISOString(),
-                details: details,
-                userAgent: navigator.userAgent
-            });
-        } catch (error) {
-            console.error('Error logging audit event:', error);
-        }
-    };
+    // MED-04 FIX: Removed duplicate window.logAuditEvent definition.
+    // The canonical logAuditEvent with full metadata schema is defined in app.js (L131)
+    // and registered on window there. This file's duplicate caused schema inconsistency.
 
     // Shared Helper functions
     window.roundMarks = (val) => {
@@ -618,12 +615,32 @@
     };
 
     // Auth State Observer
+    // BUG-06 FIX: The observer may fire before app.js finishes executing (race condition).
+    // We wait for the 'appReady' event dispatched by app.js before calling showDashboard.
+    // A timeout fallback of 5 seconds prevents a permanent blank screen if the event never fires.
+    let _appReadyResolve;
+    const _appReadyPromise = new Promise(resolve => { _appReadyResolve = resolve; });
+    window._notifyAppReady = function() { if (_appReadyResolve) { _appReadyResolve(); _appReadyResolve = null; } };
+
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userSnap = await window.getDoc(window.doc(window.db, 'users', user.uid));
             if (userSnap.exists()) {
                 const userData = userSnap.data();
+
+                // Block login for deactivated/deleted accounts even at the auth observer level
+                if (userData.isDeleted || userData.isActive === false || userData.isLocked) {
+                    await auth.signOut();
+                    window.currentUser = null;
+                    return;
+                }
+
                 window.currentUser = { ...userData, uid: user.uid };
+
+                // Wait for app.js to register showDashboard (with 5s timeout safety net)
+                const timeout = new Promise(r => setTimeout(r, 5000));
+                await Promise.race([_appReadyPromise, timeout]);
+
                 if (window.showDashboard) window.showDashboard(userData.role);
             }
         } else {

@@ -1,7 +1,18 @@
-service-account.json
+# Sensitive credentials and secrets
+service-account*.json
 *.key
+*.pem
 .env
+.env.*
+*.secret
+
+# Dependencies and build artifacts
 node_modules/
+dist/
+build/
+
+# Data and export files
 *.xlsx
 *.csv
 scratch/
+*.log
