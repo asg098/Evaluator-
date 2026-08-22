@@ -1321,7 +1321,7 @@ function showCoordSection(section, btn) {
     document.querySelectorAll('#coordinatorDashboard .nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('coord' + section.charAt(0).toUpperCase() + section.slice(1)).classList.add('active');
     if (btn) btn.classList.add('active');
-    if (section === 'classes') { loadClassesList(); loadClassesDropdown(); }
+    if (section === 'classes') { loadClassesList(); loadClassesDropdown(); if (typeof loadAllClassDropdowns === 'function') loadAllClassDropdowns(); if (typeof loadDivisionsDropdownForBatch === 'function') loadDivisionsDropdownForBatch(); }
     else if (section === 'subjects') loadSubjectsList();
     else if (section === 'students') loadStudentsList();
     else if (section === 'exams') loadExamsList();

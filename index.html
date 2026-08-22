@@ -280,6 +280,48 @@
                             <div class="value" id="hodPendingApprovals">0</div>
                         </div>
                     </div>
+
+                    <div class="card" style="margin-top:20px;">
+                        <h3 style="display:flex;align-items:center;gap:8px;">
+                            <span>📊</span> Department Performance & Marks Analytics Breakdown
+                        </h3>
+                        <p style="color:var(--gray-500);font-size:13px;margin-bottom:16px;">
+                            Real-time department-wide student performance breakdown across all evaluated examinations:
+                        </p>
+                        <div class="stats-grid"
+                            style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                            <div class="stat-card" style="background:#ecfdf5;border-color:#6ee7b7;text-align:center;">
+                                <h4 style="color:#065f46;margin:0 0 6px 0;font-size:13px;">&gt; 20 Marks</h4>
+                                <div class="value" id="hodAbove20Count"
+                                    style="color:#047857;font-size:24px;font-weight:800;">0</div>
+                                <div style="font-size:11px;color:#059669;margin-top:4px;" id="hodAbove20Pct">0%</div>
+                            </div>
+                            <div class="stat-card" style="background:#eff6ff;border-color:#93c5fd;text-align:center;">
+                                <h4 style="color:#1e40af;margin:0 0 6px 0;font-size:13px;">&gt; 15 Marks</h4>
+                                <div class="value" id="hodAbove15Count"
+                                    style="color:#1d4ed8;font-size:24px;font-weight:800;">0</div>
+                                <div style="font-size:11px;color:#2563eb;margin-top:4px;" id="hodAbove15Pct">0%</div>
+                            </div>
+                            <div class="stat-card" style="background:#fefce8;border-color:#fde047;text-align:center;">
+                                <h4 style="color:#854d0e;margin:0 0 6px 0;font-size:13px;">&gt; 10 Marks</h4>
+                                <div class="value" id="hodAbove10Count"
+                                    style="color:#a16207;font-size:24px;font-weight:800;">0</div>
+                                <div style="font-size:11px;color:#ca8a04;margin-top:4px;" id="hodAbove10Pct">0%</div>
+                            </div>
+                            <div class="stat-card" style="background:#fff7ed;border-color:#ffedd5;text-align:center;">
+                                <h4 style="color:#9a3412;margin:0 0 6px 0;font-size:13px;">&gt; 5 Marks</h4>
+                                <div class="value" id="hodAbove5Count"
+                                    style="color:#c2410c;font-size:24px;font-weight:800;">0</div>
+                                <div style="font-size:11px;color:#ea580c;margin-top:4px;" id="hodAbove5Pct">0%</div>
+                            </div>
+                            <div class="stat-card" style="background:#fef2f2;border-color:#fca5a5;text-align:center;">
+                                <h4 style="color:#991b1b;margin:0 0 6px 0;font-size:13px;">&le; 5 Marks</h4>
+                                <div class="value" id="hodBelow5Count"
+                                    style="color:#dc2626;font-size:24px;font-weight:800;">0</div>
+                                <div style="font-size:11px;color:#ef4444;margin-top:4px;" id="hodBelow5Pct">0%</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -705,6 +747,15 @@
                         <button class="btn btn-success" onclick="addDivision()">Add Division</button>
                     </div>
                     <div class="card">
+                        <h3>Add Batches (Lab/Practical)</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Select Class</label><select id="batchClassSelect" onchange="loadDivisionsDropdownForBatch()"></select></div>
+                            <div class="form-group"><label>Select Division</label><select id="batchDivisionSelect"></select></div>
+                        </div>
+                        <div class="form-group"><label>Batch Name(s) <small style="color:var(--gray-500);">(Comma-separated)</small></label><input type="text" id="batchNamesInput" placeholder="e.g., B1, B2, B3, B4"></div>
+                        <button class="btn btn-primary" onclick="addBatch()">Add Batch(es)</button>
+                    </div>
+                    <div class="card">
                         <h3>All Classes and Divisions</h3>
                         <button class="btn btn-success btn-sm" onclick="exportClassesExcel()"
                             style="margin-bottom:12px;">Export to Excel</button>
@@ -727,6 +778,8 @@
                                     placeholder="e.g., SE"></div>
                             <div class="form-group"><label>Division</label><input type="text" id="subjectDivision"
                                     placeholder="e.g., A"></div>
+                            <div class="form-group"><label>Batch (Optional)</label><input type="text" id="subjectBatch"
+                                    placeholder="e.g., B1 or All"></div>
                         </div>
                         <button class="btn btn-primary" onclick="addSubject()">Add Subject</button>
                     </div>
@@ -765,6 +818,8 @@
                                     placeholder="e.g., SE"></div>
                             <div class="form-group"><label>Division</label><input type="text" id="studentDivision"
                                     placeholder="e.g., A"></div>
+                            <div class="form-group"><label>Batch (Optional)</label><input type="text" id="studentBatch"
+                                    placeholder="e.g., B1, B2"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>Email (Optional)</label><input type="email" id="studentEmail"
@@ -788,8 +843,13 @@
                     </div>
                     <div class="card">
                         <h3>All Students</h3>
-                        <div class="form-group"><input type="text" id="studentSearch" placeholder="Search students..."
-                                onkeyup="filterStudents()"></div>
+                        <div class="form-row" style="margin-bottom:12px;">
+                            <div class="form-group" style="flex:2;"><input type="text" id="studentSearch" placeholder="Search students..."
+                                    onkeyup="filterStudents()"></div>
+                            <div class="form-group" style="flex:1;"><select id="studentDivisionFilter" onchange="filterStudents()">
+                                    <option value="">All Divisions</option>
+                                </select></div>
+                        </div>
                         <button class="btn btn-success btn-sm" onclick="exportStudentsExcel()"
                             style="margin-bottom:12px;">Export to Excel</button>
                         <table>
@@ -867,6 +927,8 @@
                                     placeholder="e.g., SE"></div>
                             <div class="form-group"><label>Division</label><input type="text" id="assignDivision"
                                     placeholder="e.g., A"></div>
+                            <div class="form-group"><label>Batch (Optional)</label><input type="text" id="assignBatch"
+                                    placeholder="e.g., B1 or All"></div>
                         </div>
                         <button class="btn btn-primary" onclick="assignTeacher()">Assign Teacher</button>
                     </div>
